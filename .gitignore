@@ -8,6 +8,7 @@ node_modules/
 dist/
 
 .vscode
+headers.txt
 
 # Compiled Java class files
 *.class
