@@ -6,7 +6,7 @@
         <div class="mb-3">
           <label for="email" class="form-label">Email address</label>
           <input type="text" class="form-control" id="email" name="email" />
-          <div class="form-text"></div>
+          <div class="form-text"><%= typeof email !== 'undefined' ? email : '' %></div>
         </div>
         <div class="mb-3">
           <label for="password" class="form-label">Password</label>
@@ -16,7 +16,7 @@
             id="password"
             name="password"
           />
-          <div class="form-text"></div>
+          <div class="form-text"><%= locals.password ? password : '' %></div>
         </div>
 
         <button type="submit" class="btn btn-primary">Submit</button>

@@ -50,7 +50,7 @@ app.get("/try-post-form", (req, res) => {
 });
 // const urlencodedParser = express.urlencoded({extended: true});
 app.post("/try-post-form", (req, res) => {
-  res.json(req.body);
+  res.render("try-post-form", req.body);
 });
 
 // ************
