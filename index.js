@@ -14,6 +14,27 @@ app.get("/", (req, res) => {
   res.render("home", { name: "Shinder" });
 });
 
+app.get("/json-sales", (req, res) => {
+  const sales = [
+    {
+      name: "Bill",
+      age: 28,
+      id: "A001",
+    },
+    {
+      name: "Peter",
+      age: 32,
+      id: "A002",
+    },
+    {
+      name: "Carl",
+      age: 29,
+      id: "A003",
+    },
+  ];
+  res.render("json-sales", { sales });
+});
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
