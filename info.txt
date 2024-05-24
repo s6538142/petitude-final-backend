@@ -4,5 +4,6 @@
   c. 如何安裝專案套件, 例如 express
   d. 如何移除專案套件
   e. git clone 的專案, 如何一次安裝所有的套件
+  f. 如何執行 package.json 裡的 scripts
 
-  
+
