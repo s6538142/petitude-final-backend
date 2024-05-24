@@ -53,6 +53,11 @@ app.post("/try-post-form", (req, res) => {
   res.render("try-post-form", req.body);
 });
 
+app.post("/try-post", (req, res) => {
+  res.json(req.body);
+});
+
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
