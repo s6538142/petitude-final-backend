@@ -2,6 +2,10 @@
 <%- include('parts/navbar') %>
 <div class="container">
   <h2><%= name %></h2>
+  <div><a href="/try-qs?a=1&b=3">/try-qs?a=1&b=3</a></div>
+  <div><a href="/try-qs?a[]=2&a[]=bill">/try-qs?a[]=2&a[]=bill</a></div>
+  <div><a href="/try-qs?a=2&a=bill">/try-qs?a=2&a=bill</a></div>
+  <div><a href="/try-qs?a[age]=2&a[name]=bill">/try-qs?a[age]=2&a[name]=bill</a></div>
 </div>
 <%- include('parts/scripts') %>
 <%- include('parts/html-foot') %>

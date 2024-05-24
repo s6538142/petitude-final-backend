@@ -35,6 +35,10 @@ app.get("/json-sales", (req, res) => {
   res.render("json-sales", { sales });
 });
 
+app.get("/try-qs", (req, res) => {
+  res.json(req.query); // 查看 query string
+});
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
