@@ -5,6 +5,8 @@ import express from "express";
 
 const app = express();
 
+app.set('view engine', 'ejs');
+
 // routes
 // 設定路由, 只允許用 GET 拜訪
 app.get("/", (req, res) => {
