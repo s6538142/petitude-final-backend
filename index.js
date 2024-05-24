@@ -4,14 +4,14 @@
 import express from "express";
 import multer from "multer";
 
-const upload = multer({dest: "tmp_uploads/"});
+const upload = multer({ dest: "tmp_uploads/" });
 
 const app = express();
 
 app.set("view engine", "ejs");
 
 // 只會解析 application/x-www-form-urlencoded
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 
 // 只會解析 application/json
 app.use(express.json());
@@ -60,10 +60,12 @@ app.post("/try-post", (req, res) => {
   res.json(req.body);
 });
 
-app.post("/try-upload", upload.single('avatar'), (req, res) => {
-  res.json(req.file);
+app.post("/try-upload", upload.single("avatar"), (req, res) => {
+  res.json({
+    body: req.body,
+    file: req.file,
+  });
 });
-
 
 // ************
 // 設定靜態內容資料夾
