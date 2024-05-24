@@ -7,6 +7,12 @@ const app = express();
 
 app.set("view engine", "ejs");
 
+// 只會解析 application/x-www-form-urlencoded
+app.use(express.urlencoded({extended: true}));
+
+// 只會解析 application/json
+app.use(express.json());
+
 // routes
 // 設定路由, 只允許用 GET 拜訪
 app.get("/", (req, res) => {
@@ -42,8 +48,8 @@ app.get("/try-qs", (req, res) => {
 app.get("/try-post-form", (req, res) => {
   res.render("try-post-form");
 });
-const urlencodedParser = express.urlencoded({extended: true});
-app.post("/try-post-form", urlencodedParser, (req, res) => {
+// const urlencodedParser = express.urlencoded({extended: true});
+app.post("/try-post-form", (req, res) => {
   res.json(req.body);
 });
 
