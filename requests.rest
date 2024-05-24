@@ -1,0 +1,18 @@
+
+
+GET http://localhost:3001/try-post-form
+
+### 分隔線
+
+POST http://localhost:3001/try-post-form
+Content-Type: application/json
+
+{"name":"Shinder",
+"age":30}
+
+
+### 分隔線
+POST http://localhost:3001/try-post-form
+Content-Type: application/x-www-form-urlencoded
+
+email=shinder@test.com&name=小新
