@@ -5,21 +5,19 @@ import express from "express";
 
 const app = express();
 
-app.set('view engine', 'ejs');
+app.set("view engine", "ejs");
 
 // routes
 // 設定路由, 只允許用 GET 拜訪
 app.get("/", (req, res) => {
-  res.send(`<h2>哈囉</h2>`);
+  // res.send(`<h2>哈囉</h2>`);
+  res.render("home", { name: "Shinder" });
 });
 
-
-// ************ 
+// ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
 app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
-
-
 
 // ************ 404 要放在所有的路由設定之後
 // use 接受所有 HTTP 方法
