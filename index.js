@@ -2,6 +2,9 @@
 // console.log(process.env.DB_USER);
 
 import express from "express";
+import multer from "multer";
+
+const upload = multer({dest: "tmp_uploads/"});
 
 const app = express();
 
@@ -55,6 +58,10 @@ app.post("/try-post-form", (req, res) => {
 
 app.post("/try-post", (req, res) => {
   res.json(req.body);
+});
+
+app.post("/try-upload", upload.single('avatar'), (req, res) => {
+  res.json(req.file);
 });
 
 
