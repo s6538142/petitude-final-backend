@@ -8,6 +8,7 @@ node_modules/
 dist/
 
 public/img
+tmp_uploads
 
 .vscode
 headers.txt
