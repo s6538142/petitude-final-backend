@@ -39,6 +39,13 @@ app.get("/try-qs", (req, res) => {
   res.json(req.query); // 查看 query string
 });
 
+app.get("/try-post-form", (req, res) => {
+  res.render("try-post-form");
+});
+app.post("/try-post-form", (req, res) => {
+  res.send("post~~");
+});
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
