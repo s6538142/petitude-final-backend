@@ -4,6 +4,7 @@
 import express from "express";
 import multer from "multer";
 import upload from "./utils/upload-imgs.js";
+import admin2Router from "./routes/admin2.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -91,6 +92,9 @@ app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
   u = u.split("-").join("");
   res.json({ u });
 });
+
+app.use(admin2Router);
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
