@@ -19,10 +19,16 @@ app.use(express.urlencoded({ extended: true }));
 // 只會解析 application/json
 app.use(express.json());
 
+// 自訂頂層的 middleware
+app.use((req, res, next) => {
+  res.locals.title = "小新的網頁";
+  next();
+});
+
 // routes
 // 設定路由, 只允許用 GET 拜訪
 app.get("/", (req, res) => {
-  // res.send(`<h2>哈囉</h2>`);
+  res.locals.title = "首頁 | " + res.locals.title;
   res.render("home", { name: "Shinder" });
 });
 
@@ -93,7 +99,6 @@ app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
   res.json({ u });
 });
 app.use("/admin2", admin2Router);
-
 
 // ************
 // 設定靜態內容資料夾
