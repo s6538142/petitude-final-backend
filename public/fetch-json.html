@@ -18,11 +18,21 @@
       const sendData = (e) => {
         e.preventDefault();
 
+        const dataObj = {};
         const fd = new FormData(document.forms[0]);
 
-        fetch("/try-upload", {
+        // 不適合 key 有重複的狀況
+        for (let [k, v] of fd.entries()) {
+          dataObj[k] = v;
+        }
+        console.log(dataObj);
+
+        fetch("/try-post", {
           method: "POST",
-          body: fd,
+          body: JSON.stringify(dataObj),
+          headers: {
+            "Content-Type": "application/json",
+          },
         })
           .then((r) => r.json())
           .then((data) => {
