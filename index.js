@@ -72,6 +72,18 @@ app.post("/try-uploads", upload.array("photos"), (req, res) => {
   res.json(req.files);
 });
 
+// 嚴謹的路徑規則
+app.get("/my-params1/my", (req, res) => {
+  res.json("/my-params1/my");
+});
+// 寛鬆的路徑規則
+app.get("/my-params1/:action?/:id?", (req, res) => {
+  res.json(req.params);
+});
+
+app.get("/products/:pid", (req, res) => {
+  res.json(req.params.pid);
+});
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
