@@ -22,6 +22,7 @@
         const fd = new FormData(document.forms[0]);
 
         // 不適合 key 有重複的狀況
+        // 常用在 react 的可控表單的資料送出
         for (let [k, v] of fd.entries()) {
           dataObj[k] = v;
         }
