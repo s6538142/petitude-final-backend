@@ -3,9 +3,10 @@
 
 import express from "express";
 import multer from "multer";
+import upload from "./utils/upload-imgs.js";
 
 // tmp_uploads 暫存的資料夾
-const upload = multer({ dest: "tmp_uploads/" });
+// const upload = multer({ dest: "tmp_uploads/" });
 
 const app = express();
 
