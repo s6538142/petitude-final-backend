@@ -92,8 +92,8 @@ app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
   u = u.split("-").join("");
   res.json({ u });
 });
+app.use("/admin2", admin2Router);
 
-app.use(admin2Router);
 
 // ************
 // 設定靜態內容資料夾
