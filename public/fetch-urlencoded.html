@@ -9,13 +9,30 @@
     <form onsubmit="sendData(event)">
       <input type="text" name="email" value="test@test.com" /><br />
       <input type="password" name="password" value="password" /><br />
+      <input type="checkbox" name="test" value="選項一" /> 選項一 <br />
+      <input type="checkbox" name="test" value="選項二" /> 選項二 <br />
       <input type="submit" />
     </form>
+    <div id="info"></div>
     <script>
       const sendData = (e) => {
         e.preventDefault();
 
-        
+
+        const fd = new FormData(document.forms[0]);
+        const usp = new URLSearchParams(fd);
+
+        fetch("/try-post", {
+          method: "POST",
+          body: usp.toString(),
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            info.innerText = JSON.stringify(data);
+          });
       };
     </script>
   </body>
