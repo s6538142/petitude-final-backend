@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <form name="form1" action="" onsubmit="return false">
+      <input type="file" name="avatar" />
+      <img src="" alt="" id="avatar_prev" />
+    </form>
+
+    <script>
+      const avatar_field = document.form1.avatar;
+
+      avatar_field.addEventListener("change", (e) => {
+        console.log(avatar_field.files);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          // reader.result
+          console.log(reader.result);
+          avatar_prev.src = reader.result;
+        };
+        reader.readAsDataURL(avatar_field.files[0]);
+      });
+    </script>
+  </body>
+</html>
