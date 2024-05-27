@@ -86,7 +86,10 @@ app.get("/products/:pid", (req, res) => {
 });
 
 app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
-  res.send(req.url);
+  let u = req.url.slice(3);
+  u = u.split("?")[0];
+  u = u.split("-").join("");
+  res.json({ u });
 });
 // ************
 // 設定靜態內容資料夾
