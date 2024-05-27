@@ -6,4 +6,14 @@
   e. git clone 的專案, 如何一次安裝所有的套件
   f. 如何執行 package.json 裡的 scripts
 
+ 2. 建立 Express server
 
+ 3. 設定 404 頁面
+
+ 4. 設定靜態內容資料夾
+
+ 5. EJS 的設定
+
+ 6. 如何設定 top-level middlewares, 用來處理 urlencoded, json 的表單格式
+
+ 7. 檔案上傳的模組 multer

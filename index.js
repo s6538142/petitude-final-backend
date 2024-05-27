@@ -4,6 +4,7 @@
 import express from "express";
 import multer from "multer";
 
+// tmp_uploads 暫存的資料夾
 const upload = multer({ dest: "tmp_uploads/" });
 
 const app = express();
