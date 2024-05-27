@@ -68,6 +68,9 @@ app.post("/try-upload", upload.single("avatar"), (req, res) => {
     file: req.file,
   });
 });
+app.post("/try-uploads", upload.array("photos"), (req, res) => {
+  res.json(req.files);
+});
 
 // ************
 // 設定靜態內容資料夾
