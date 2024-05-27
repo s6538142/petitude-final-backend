@@ -84,6 +84,10 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
 app.get("/products/:pid", (req, res) => {
   res.json(req.params.pid);
 });
+
+app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
+  res.send(req.url);
+});
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
