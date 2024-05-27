@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <form name="form1" action="" onsubmit="return false">
+      <input type="file" name="avatar" />
+      <img src="" alt="" id="avatar_prev" />
+    </form>
+
+    <script>
+      const avatar_field = document.form1.avatar;
+
+      avatar_field.addEventListener("change", (e) => {
+        console.log(avatar_field.files);
+
+        // 同步的方式, 取得 BLOB 的 url
+        const img_url = URL.createObjectURL(avatar_field.files[0]);
+        avatar_prev.src = img_url;
+      });
+    </script>
+  </body>
+</html>
