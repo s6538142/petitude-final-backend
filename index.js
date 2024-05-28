@@ -5,6 +5,7 @@ import express from "express";
 import multer from "multer";
 import upload from "./utils/upload-imgs.js";
 import admin2Router from "./routes/admin2.js";
+import session from "express-session";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -19,9 +20,23 @@ app.use(express.urlencoded({ extended: true }));
 // 只會解析 application/json
 app.use(express.json());
 
+app.use(
+  session({
+    saveUninitialized: false,
+    resave: false,
+    secret: "dkfgdlkg8496749KHJKHLd",
+  })
+);
+
 // 自訂頂層的 middleware
 app.use((req, res, next) => {
   res.locals.title = "小新的網頁";
+  // 要有 session 的 middleware 才有 req.session
+  req.session.myNum ||= 1; // 如果 falsy 就設定為 1
+  // req.session.myNum = req.session.myNum || 1;
+  req.session.myNum++;
+
+  console.log(req.session);
   next();
 });
 
