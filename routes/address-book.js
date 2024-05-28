@@ -14,11 +14,19 @@ router.get("/", async (req, res) => {
 
   const t_sql = "SELECT COUNT(1) totalRows FROM address_book";
   const [[{ totalRows }]] = await db.query(t_sql);
-  if(totalRows) {
+  let totalPages = 0; // 總頁數, 預設值
+  let rows = []; // 分頁資料
+  if (totalRows) {
+    totalPages = Math.ceil(totalRows / perPage);
     // 取得分頁資料
+    const sql = `SELECT * FROM \`address_book\` LIMIT ${
+      (page - 1) * perPage
+    },${perPage}`;
+
+    [rows] = await db.query(sql);
   }
 
-  res.json({ success, perPage, page, totalRows });
+  res.json({ success, perPage, page, totalRows, totalPages, rows });
 });
 
 export default router;
