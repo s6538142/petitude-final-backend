@@ -157,6 +157,13 @@ app.get("/try-moment2", (req, res) => {
   ]);
 });
 
+app.get("/try-db", async (req, res) => {
+  const sql = "SELECT * FROM address_book LIMIT 3";
+
+  const [results, fields] = await db.query(sql);
+  res.json({results, fields});
+});
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
