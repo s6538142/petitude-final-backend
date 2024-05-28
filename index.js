@@ -31,12 +31,7 @@ app.use(
 // 自訂頂層的 middleware
 app.use((req, res, next) => {
   res.locals.title = "小新的網頁";
-  // 要有 session 的 middleware 才有 req.session
-  req.session.myNum ||= 1; // 如果 falsy 就設定為 1
-  // req.session.myNum = req.session.myNum || 1;
-  req.session.myNum++;
 
-  console.log(req.session);
   next();
 });
 
@@ -114,6 +109,15 @@ app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
   res.json({ u });
 });
 app.use("/admin2", admin2Router);
+
+app.get("/try-sess", (req, res) => {
+  // 要有 session 的 middleware 才有 req.session
+
+    // req.session.myNum = req.session.myNum || 1;
+  req.session.myNum ||= 0; // 如果 falsy 就設定為 0
+  req.session.myNum++;
+  res.json(req.session);
+});
 
 // ************
 // 設定靜態內容資料夾
