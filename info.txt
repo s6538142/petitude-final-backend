@@ -17,3 +17,19 @@
  6. 如何設定 top-level middlewares, 用來處理 urlencoded, json 的表單格式
 
  7. 檔案上傳的模組 multer
+
+ 8. 製作上傳檔案的模組 (upload-imgs.js)
+
+ 9. 前端預覽圖檔的方式 (二種)
+
+10. 路徑的變數 (動態路由) req.params (parameters)
+
+11. 路由的模組化 (router), 掛在主程式
+
+12. 自訂 middlewares
+
+13. fetch 發送資料的三種格式 (放在 body 的資料)
+
+14. URLSearchParams 的用法 (urlencoded)
+
+
