@@ -5,13 +5,15 @@ import db from "./../utils/connect-mysql.js";
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+const getListData = async (req) => {
   let success = false;
+  let redirect = "";
 
   const perPage = 25; // 每頁最多有幾筆資料
   let page = parseInt(req.query.page) || 1; // 從 query string 最得 page 的值
   if (page < 1) {
-    return res.redirect("?page=1"); // 跳轉頁面
+    redirect = "?page=1";
+    return { success, redirect };
   }
 
   const t_sql = "SELECT COUNT(1) totalRows FROM address_book";
@@ -21,7 +23,8 @@ router.get("/", async (req, res) => {
   if (totalRows) {
     totalPages = Math.ceil(totalRows / perPage);
     if (page > totalPages) {
-      return res.redirect(`?page=${totalPages}`); // 跳轉頁面
+      redirect = `?page=${totalPages}`;
+      return { success, redirect };
     }
     // 取得分頁資料
     const sql = `SELECT * FROM \`address_book\` LIMIT ${
@@ -33,16 +36,29 @@ router.get("/", async (req, res) => {
       el.birthday = moment(el.birthday).format(dateFormat);
     });
   }
-
-  // res.json({ success, perPage, page, totalRows, totalPages, rows });
-  res.render("address-book/list", {
+  success = true;
+  return {
     success,
     perPage,
     page,
     totalRows,
     totalPages,
     rows,
-  });
+  };
+};
+
+router.get("/", async (req, res) => {
+  const data = await getListData(req);
+  if (data.redirect) {
+    return res.redirect(data.redirect);
+  }
+  if (data.success) {
+    res.render("address-book/list", data);
+  }
 });
 
+router.get("/api", async (req, res) => {
+  const data = await getListData(req);
+  res.json(data);
+});
 export default router;
