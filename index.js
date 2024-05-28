@@ -8,6 +8,7 @@ import admin2Router from "./routes/admin2.js";
 import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
+import abRouter from "./routes/address-book.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -48,6 +49,8 @@ app.get("/", (req, res) => {
   res.locals.title = "首頁 | " + res.locals.title;
   res.render("home", { name: "Shinder" });
 });
+
+app.use("/address-book", abRouter);
 
 app.get("/json-sales", (req, res) => {
   const sales = [
@@ -161,7 +164,7 @@ app.get("/try-db", async (req, res) => {
   const sql = "SELECT * FROM address_book LIMIT 3";
 
   const [results, fields] = await db.query(sql);
-  res.json({results, fields});
+  res.json({ results, fields });
 });
 
 // ************
