@@ -29,7 +29,8 @@ router.get("/", async (req, res) => {
     [rows] = await db.query(sql);
   }
 
-  res.json({ success, perPage, page, totalRows, totalPages, rows });
+  // res.json({ success, perPage, page, totalRows, totalPages, rows });
+  res.render("address-book/list", { success, perPage, page, totalRows, totalPages, rows });
 });
 
 export default router;

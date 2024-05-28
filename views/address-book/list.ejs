@@ -1,0 +1,32 @@
+<%- include('../parts/html-head') %> <%- include('../parts/navbar') %>
+<div class="container">
+  <div class="row">
+    <div class="col">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">編號</th>
+            <th scope="col">姓名</th>
+            <th scope="col">Email</th>
+            <th scope="col">手機</th>
+            <th scope="col">生日</th>
+            <th scope="col">地址</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% for(let r of rows){ %>
+            <tr>
+              <td><%= r['sid'] %></td>
+              <td><%= r.name %></td>
+              <td><%= r.email %></td>
+              <td><%= r.mobile %></td>
+              <td><%= r.birthday %></td>
+              <td><%= r.address %></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../parts/scripts') %> <%- include('../parts/html-foot') %>
