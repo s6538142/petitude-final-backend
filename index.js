@@ -7,6 +7,7 @@ import upload from "./utils/upload-imgs.js";
 import admin2Router from "./routes/admin2.js";
 import session from "express-session";
 import moment from "moment-timezone";
+import db from "./utils/connect-mysql.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -138,14 +139,13 @@ app.get("/try-moment", (req, res) => {
     m2b: m2.tz("Europe/London").format(fm),
     m3a: m3.format(fm),
     m3b: m3.tz("Europe/London").format(fm),
-  })
-})
+  });
+});
 app.get("/try-moment2", (req, res) => {
   const fm = "YYYY-MM-DD HH:mm:ss";
   const m1 = moment("2024-02-29");
   const m2 = moment("2024-05-35");
   const m3 = moment("2023-02-29");
-
 
   res.json([
     m1.format(fm),
@@ -154,8 +154,8 @@ app.get("/try-moment2", (req, res) => {
     m2.isValid(),
     m3.format(fm),
     m3.isValid(),
-  ])
-})
+  ]);
+});
 
 // ************
 // 設定靜態內容資料夾
