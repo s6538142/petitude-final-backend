@@ -1,6 +1,8 @@
 import express from "express";
+import moment from "moment-timezone";
 import db from "./../utils/connect-mysql.js";
 
+const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
@@ -27,10 +29,20 @@ router.get("/", async (req, res) => {
     },${perPage}`;
 
     [rows] = await db.query(sql);
+    rows.forEach((el) => {
+      el.birthday = moment(el.birthday).format(dateFormat);
+    });
   }
 
   // res.json({ success, perPage, page, totalRows, totalPages, rows });
-  res.render("address-book/list", { success, perPage, page, totalRows, totalPages, rows });
+  res.render("address-book/list", {
+    success,
+    perPage,
+    page,
+    totalRows,
+    totalPages,
+    rows,
+  });
 });
 
 export default router;
