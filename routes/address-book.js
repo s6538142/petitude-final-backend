@@ -5,10 +5,9 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   const t_sql = "SELECT COUNT(1) totalRows FROM address_book";
-  const [results] = await db.query(t_sql);
+  const [[{ totalRows }]] = await db.query(t_sql);
 
-
-  res.json(results);
+  res.json(totalRows);
 });
 
 export default router;
