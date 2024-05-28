@@ -6,6 +6,7 @@ import multer from "multer";
 import upload from "./utils/upload-imgs.js";
 import admin2Router from "./routes/admin2.js";
 import session from "express-session";
+import moment from "moment-timezone";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -118,11 +119,27 @@ app.use("/admin2", admin2Router);
 app.get("/try-sess", (req, res) => {
   // 要有 session 的 middleware 才有 req.session
 
-    // req.session.myNum = req.session.myNum || 1;
+  // req.session.myNum = req.session.myNum || 1;
   req.session.myNum ||= 0; // 如果 falsy 就設定為 0
   req.session.myNum++;
   res.json(req.session);
 });
+
+app.get("/try-moment", (req, res) => {
+  const fm = "YYYY-MM-DD HH:mm:ss";
+  const m1 = moment(); // 當下時間的 moment 物件
+  const m2 = moment(new Date()); // 當下時間的 moment 物件
+  const m3 = moment("2023-10-25");
+
+  res.json({
+    m1a: m1.format(fm),
+    m1b: m1.tz("Europe/London").format(fm),
+    m2a: m2.format(fm),
+    m2b: m2.tz("Europe/London").format(fm),
+    m3a: m3.format(fm),
+    m3b: m3.tz("Europe/London").format(fm),
+  })
+})
 
 // ************
 // 設定靜態內容資料夾
