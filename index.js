@@ -140,6 +140,22 @@ app.get("/try-moment", (req, res) => {
     m3b: m3.tz("Europe/London").format(fm),
   })
 })
+app.get("/try-moment2", (req, res) => {
+  const fm = "YYYY-MM-DD HH:mm:ss";
+  const m1 = moment("2024-02-29");
+  const m2 = moment("2024-05-35");
+  const m3 = moment("2023-02-29");
+
+
+  res.json([
+    m1.format(fm),
+    m1.isValid(),
+    m2.format(fm),
+    m2.isValid(),
+    m3.format(fm),
+    m3.isValid(),
+  ])
+})
 
 // ************
 // 設定靜態內容資料夾
