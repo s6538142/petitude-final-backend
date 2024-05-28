@@ -25,6 +25,11 @@ app.use(
     saveUninitialized: false,
     resave: false,
     secret: "dkfgdlkg8496749KHJKHLd",
+    /*
+    cookie: {
+      maxAge: 1800_000
+    }
+    */
   })
 );
 
