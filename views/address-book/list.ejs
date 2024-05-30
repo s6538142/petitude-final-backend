@@ -4,9 +4,12 @@
     <div class="col-6">
       <nav aria-label="Page navigation example">
         <ul class="pagination">
-          <% for(let i=page-5; i<=page+5; i++) if(i>=1 && i<=totalPages) { %>
+          <% for(let i=page-5; i<=page+5; i++) if(i>=1 && i<=totalPages) { 
+            const qs2 = {...qs, page: i};
+            
+            %>
           <li class="page-item <%= i===page ? 'active' : '' %>">
-            <a class="page-link" href="?page=<%= i %>"><%= i %></a>
+            <a class="page-link" href="?<%= new URLSearchParams(qs2).toString() %>"><%= i %></a>
           </li>
           <% } %>
         </ul>
@@ -19,6 +22,7 @@
           type="search"
           placeholder="Search"
           name="keyword"
+          value="<%= qs.keyword ? qs.keyword : '' %>"
         />
         <button class="btn btn-outline-success" type="submit">Search</button>
       </form>

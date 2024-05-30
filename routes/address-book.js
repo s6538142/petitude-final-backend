@@ -68,6 +68,7 @@ const getListData = async (req) => {
     totalRows,
     totalPages,
     rows,
+    qs: req.query
   };
 };
 
