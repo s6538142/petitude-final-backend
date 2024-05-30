@@ -106,8 +106,8 @@ router.post("/add", [upload.none()], async (req, res) => {
 router.post("/add", async (req, res) => {
   // TODO: 欄位資料的檢查
 
+  /*
   const sql = "INSERT INTO address_book (`name`, `email`, `mobile`, `birthday`, `address`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())";
-
   const [ result ] = await db.query(sql, [
     req.body.name,
     req.body.email,
@@ -115,7 +115,12 @@ router.post("/add", async (req, res) => {
     req.body.birthday,
     req.body.address,
   ]);
+*/
 
+  let body = { ...req.body };
+  body.created_at = new Date();
+  const sql = "INSERT INTO address_book SET ?";
+  const [result] = await db.query(sql, [body]);
 
   res.json(result);
   /*
