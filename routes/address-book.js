@@ -48,6 +48,8 @@ const getListData = async (req) => {
 };
 
 router.get("/", async (req, res) => {
+  res.locals.title = "通訊錄列表 | " + res.locals.title;
+  res.locals.pageName = 'ab_list';
   const data = await getListData(req);
   if (data.redirect) {
     return res.redirect(data.redirect);

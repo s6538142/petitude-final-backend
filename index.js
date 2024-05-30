@@ -38,7 +38,7 @@ app.use(
 
 // 自訂頂層的 middleware
 app.use((req, res, next) => {
-  res.locals.title = "小新的網頁";
+  res.locals.title = "小新的網站";
 
   next();
 });
