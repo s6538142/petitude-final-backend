@@ -41,6 +41,7 @@ const getListData = async (req) => {
   }
 
   const t_sql = `SELECT COUNT(1) totalRows FROM address_book ${where}`;
+  console.log(t_sql);
   const [[{ totalRows }]] = await db.query(t_sql);
   let totalPages = 0; // 總頁數, 預設值
   let rows = []; // 分頁資料
@@ -54,7 +55,7 @@ const getListData = async (req) => {
     const sql = `SELECT * FROM \`address_book\` ${where} LIMIT ${
       (page - 1) * perPage
     },${perPage}`;
-
+    console.log(sql);
     [rows] = await db.query(sql);
     rows.forEach((el) => {
       el.birthday = moment(el.birthday).format(dateFormat);
