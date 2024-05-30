@@ -119,10 +119,17 @@ router.post("/add", async (req, res) => {
 
   let body = { ...req.body };
   body.created_at = new Date();
+
+  const m = moment(body.birthday);
+  body.birthday = m.isValid() ? m.format(dateFormat) : null;
+
   const sql = "INSERT INTO address_book SET ?";
   const [result] = await db.query(sql, [body]);
 
-  res.json(result);
+  res.json({
+    result, 
+    success: !! result.affectedRows
+  });
   /*
   {
     "fieldCount": 0,
