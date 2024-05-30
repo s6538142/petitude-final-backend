@@ -89,4 +89,9 @@ router.get("/api", async (req, res) => {
   const data = await getListData(req);
   res.json(data);
 });
+
+router.get("/add", async (req, res) => {
+  res.render("address-book/add")
+});
+
 export default router;
