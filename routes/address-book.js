@@ -17,13 +17,27 @@ const getListData = async (req) => {
   }
 
   let keyword = req.query.keyword || "";
+  let birth_begin = req.query.birth_begin || "";
+  let birth_end = req.query.birth_end || "";
 
   let where = " WHERE 1 ";
   if (keyword) {
     // where += ` AND \`name\` LIKE '%${keyword}%' `; // 沒有處理 SQL injection
     const keyword_ = db.escape(`%${keyword}%`);
-    console.log({ keyword_ });
+    console.log( keyword_ );
     where += ` AND \`name\` LIKE ${keyword_} `; // 處理 SQL injection
+  }
+  if (birth_begin) {
+    const m = moment(birth_begin);
+    if(m.isValid()) {
+      where += ` AND birthday >= '${m.format(dateFormat)}' `;
+    }
+  }
+  if (birth_end) {
+    const m = moment(birth_end);
+    if(m.isValid()) {
+      where += ` AND birthday <= '${m.format(dateFormat)}' `;
+    }
   }
 
   const t_sql = `SELECT COUNT(1) totalRows FROM address_book ${where}`;
