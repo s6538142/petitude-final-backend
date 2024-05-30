@@ -4,12 +4,14 @@
     <div class="col-6">
       <nav aria-label="Page navigation example">
         <ul class="pagination">
-          <% for(let i=page-5; i<=page+5; i++) if(i>=1 && i<=totalPages) { 
-            const qs2 = {...qs, page: i};
-            
-            %>
+          <% for(let i=page-5; i<=page+5; i++) if(i>=1 && i<=totalPages) { const
+          qs2 = {...qs, page: i}; %>
           <li class="page-item <%= i===page ? 'active' : '' %>">
-            <a class="page-link" href="?<%= new URLSearchParams(qs2).toString() %>"><%= i %></a>
+            <a
+              class="page-link"
+              href="?<%= new URLSearchParams(qs2).toString() %>"
+              ><%= i %></a
+            >
           </li>
           <% } %>
         </ul>
@@ -33,23 +35,33 @@
       <table class="table table-striped table-bordered">
         <thead>
           <tr>
+            <th scope="col"><i class="fa-solid fa-trash"></i></th>
             <th scope="col">編號</th>
             <th scope="col">姓名</th>
             <th scope="col">Email</th>
             <th scope="col">手機</th>
             <th scope="col">生日</th>
             <th scope="col">地址</th>
+            <th scope="col"><i class="fa-solid fa-file-pen"></i></th>
           </tr>
         </thead>
         <tbody>
           <% for(let r of rows){ %>
           <tr>
+            <td>
+              <a href="javascript: deleteOne(<%= r['sid'] %>)">
+                <i class="fa-solid fa-trash"></i>
+              </a>
+            </td>
             <td><%= r['sid'] %></td>
             <td><%= r.name %></td>
             <td><%= r.email %></td>
             <td><%= r.mobile %></td>
             <td><%= r.birthday %></td>
             <td><%= r.address %></td>
+            <td>
+              <a href="#"><i class="fa-solid fa-file-pen"></i></a>
+            </td>
           </tr>
           <% } %>
         </tbody>
@@ -57,4 +69,22 @@
     </div>
   </div>
 </div>
-<%- include('../parts/scripts') %> <%- include('../parts/html-foot') %>
+<%- include('../parts/scripts') %>
+<script>
+  const deleteOne = (sid) => {
+    if (confirm(`是否要刪除編號為 ${sid} 的資料?`)) {
+      fetch(`/address-book/api/${sid}`, {
+        method: "DELETE",
+      })
+        .then((r) => r.json())
+        .then((result) => {
+          console.log(JSON.stringify(result));
+          if (result.success) {
+            location.reload();
+          }
+        });
+    }
+  };
+</script>
+
+<%- include('../parts/html-foot') %>
