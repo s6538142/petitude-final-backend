@@ -1,4 +1,8 @@
-<% if(!locals.pageName){ locals.pageName = ''; } %>
+<% 
+// if(!locals.pageName){ locals.pageName = ''; }
+// 重構 refactoring
+locals.pageName ||= '';
+%>
 <style>
   .navbar-nav .nav-link.active {
     background-color: blue;

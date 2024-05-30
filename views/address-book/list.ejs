@@ -1,7 +1,7 @@
 <%- include('../parts/html-head') %> <%- include('../parts/navbar') %>
 <div class="container">
   <div class="row">
-    <div class="col">
+    <div class="col-6">
       <nav aria-label="Page navigation example">
         <ul class="pagination">
           <% for(let i=page-5; i<=page+5; i++) if(i>=1 && i<=totalPages) { %>
@@ -11,6 +11,17 @@
           <% } %>
         </ul>
       </nav>
+    </div>
+    <div class="col-6">
+      <form class="d-flex" role="search">
+        <input
+          class="form-control me-2"
+          type="search"
+          placeholder="Search"
+          name="keyword"
+        />
+        <button class="btn btn-outline-success" type="submit">Search</button>
+      </form>
     </div>
   </div>
   <div class="row">
