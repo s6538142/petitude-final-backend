@@ -32,4 +32,11 @@
 
 14. URLSearchParams 的用法 (urlencoded)
 
+15. 用 express-session 建立 session 功能
+
+16. 使用 moment.js 以標準格式輸出日期或日期時間; 解析輸入的時間格式.
+
+17. 會確認環境變數在 app 裡有吃到設定
+
+18. 資料庫連線的模組設定
 
