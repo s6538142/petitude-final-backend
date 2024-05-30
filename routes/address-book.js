@@ -10,13 +10,20 @@ const getListData = async (req) => {
   let redirect = "";
 
   const perPage = 25; // 每頁最多有幾筆資料
-  let page = parseInt(req.query.page) || 1; // 從 query string 最得 page 的值
+  let page = parseInt(req.query.page) || 1; // 從 query string 取得 page 的值
   if (page < 1) {
     redirect = "?page=1";
     return { success, redirect };
   }
 
-  const t_sql = "SELECT COUNT(1) totalRows FROM address_book";
+  let keyword = req.query.keyword || '';
+
+  let where = ' WHERE 1 ';
+  if(keyword){
+    where += ` AND \`name\` LIKE '%${keyword}%' `;
+  }
+
+  const t_sql = `SELECT COUNT(1) totalRows FROM address_book ${where}`;
   const [[{ totalRows }]] = await db.query(t_sql);
   let totalPages = 0; // 總頁數, 預設值
   let rows = []; // 分頁資料
@@ -27,7 +34,7 @@ const getListData = async (req) => {
       return { success, redirect };
     }
     // 取得分頁資料
-    const sql = `SELECT * FROM \`address_book\` LIMIT ${
+    const sql = `SELECT * FROM \`address_book\` ${where} LIMIT ${
       (page - 1) * perPage
     },${perPage}`;
 
