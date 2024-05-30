@@ -128,7 +128,7 @@
     // myState[e.target.name] = e.target.value;
 
     // react style, react 風格
-    myState = {...myState, [e.target.name]: e.target.value}
+    myState = { ...myState, [e.target.name]: e.target.value };
 
     console.log(myState);
   };
@@ -160,15 +160,16 @@
       emailField.nextElementSibling.innerText = "請填寫正確的 Email";
     }
 
-    return;
-
     // 有通過檢查, 才要送表單
     if (isPass) {
       const fd = new FormData(document.form1); // 沒有外觀的表單物件
 
       fetch("", {
         method: "POST",
-        body: fd, // Content-Type: multipart/form-data
+        body: JSON.stringify(myState),
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
         .then((r) => r.json())
         .then((data) => {
