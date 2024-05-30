@@ -113,7 +113,7 @@
     if (isPass) {
       const fd = new FormData(document.form1); // 沒有外觀的表單物件
 
-      fetch('add-api.php', {
+      fetch('', {
         method: 'POST',
         body: fd, // Content-Type: multipart/form-data
       }).then(r => r.json())

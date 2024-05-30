@@ -1,6 +1,7 @@
 import express from "express";
 import moment from "moment-timezone";
 import db from "./../utils/connect-mysql.js";
+import upload from "./../utils/upload-imgs.js";
 
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
@@ -24,18 +25,18 @@ const getListData = async (req) => {
   if (keyword) {
     // where += ` AND \`name\` LIKE '%${keyword}%' `; // 沒有處理 SQL injection
     const keyword_ = db.escape(`%${keyword}%`);
-    console.log( keyword_ );
+    console.log(keyword_);
     where += ` AND \`name\` LIKE ${keyword_} `; // 處理 SQL injection
   }
   if (birth_begin) {
     const m = moment(birth_begin);
-    if(m.isValid()) {
+    if (m.isValid()) {
       where += ` AND birthday >= '${m.format(dateFormat)}' `;
     }
   }
   if (birth_end) {
     const m = moment(birth_end);
-    if(m.isValid()) {
+    if (m.isValid()) {
       where += ` AND birthday <= '${m.format(dateFormat)}' `;
     }
   }
@@ -69,7 +70,7 @@ const getListData = async (req) => {
     totalRows,
     totalPages,
     rows,
-    qs: req.query
+    qs: req.query,
   };
 };
 
@@ -91,7 +92,10 @@ router.get("/api", async (req, res) => {
 });
 
 router.get("/add", async (req, res) => {
-  res.render("address-book/add")
+  res.render("address-book/add");
+});
+router.post("/add", [upload.none()], async (req, res) => {
+  res.json(req.body);
 });
 
 export default router;
