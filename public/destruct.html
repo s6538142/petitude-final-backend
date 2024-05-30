@@ -9,11 +9,15 @@
     <script>
       const data1 = [[{ myVal: 100 }]];
       const data2 = [[{ name: "peter" }, { name: "bill" }]];
+      const data3 = { myName: "david" };
 
       const [[{ myVal }]] = data1;
-      const [[_1, { name }]] = data2;
+      let [[_1, { name: myName }]] = data2;
 
-      console.log({ myVal, name });
+      console.log({ myVal, myName });
+
+      ({ myName } = data3); // 使用已宣告過的變數時, 注意把整個設定敘述用小括號包起來
+      console.log({ myName });
     </script>
   </body>
 </html>
