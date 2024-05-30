@@ -16,11 +16,14 @@ const getListData = async (req) => {
     return { success, redirect };
   }
 
-  let keyword = req.query.keyword || '';
+  let keyword = req.query.keyword || "";
 
-  let where = ' WHERE 1 ';
-  if(keyword){
-    where += ` AND \`name\` LIKE '%${keyword}%' `;
+  let where = " WHERE 1 ";
+  if (keyword) {
+    // where += ` AND \`name\` LIKE '%${keyword}%' `; // 沒有處理 SQL injection
+    const keyword_ = db.escape(`%${keyword}%`);
+    console.log({ keyword_ });
+    where += ` AND \`name\` LIKE ${keyword_} `; // 處理 SQL injection
   }
 
   const t_sql = `SELECT COUNT(1) totalRows FROM address_book ${where}`;
@@ -56,7 +59,7 @@ const getListData = async (req) => {
 
 router.get("/", async (req, res) => {
   res.locals.title = "通訊錄列表 | " + res.locals.title;
-  res.locals.pageName = 'ab_list';
+  res.locals.pageName = "ab_list";
   const data = await getListData(req);
   if (data.redirect) {
     return res.redirect(data.redirect);
