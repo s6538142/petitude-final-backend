@@ -127,8 +127,8 @@ router.post("/add", async (req, res) => {
   const [result] = await db.query(sql, [body]);
 
   res.json({
-    result, 
-    success: !! result.affectedRows
+    result,
+    success: !!result.affectedRows,
   });
   /*
   {
@@ -141,6 +141,27 @@ router.post("/add", async (req, res) => {
     "changedRows": 0
   }
   */
+});
+
+// 刪除資料的 API
+router.delete("/api/:sid", async (req, res) => {
+  const output = {
+    success: false,
+    code: 0,
+    result: {}
+  };
+
+  const sid = +req.params.sid || 0;
+  if (!sid) {
+    return res.json(output);
+  }
+
+  const sql = `DELETE FROM address_book WHERE sid=${sid}`;
+  const [result] = await db.query(sql);
+  output.result = result;
+  output.success = !! result.affectedRows;
+
+  res.json(output);
 });
 
 export default router;
