@@ -167,6 +167,12 @@ app.get("/try-db", async (req, res) => {
   res.json({ results, fields });
 });
 
+app.get("/yahoo", async (req, res) => {
+  const r = await fetch('https://tw.yahoo.com/');
+  const txt = await r.text();
+  res.send(txt);
+});
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
