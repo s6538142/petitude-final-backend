@@ -182,7 +182,7 @@ router.get("/edit/:sid", async (req, res) => {
 
   rows[0].birthday = moment(rows[0].birthday).format(dateFormat);
 
-  res.render("address-book/edit", rows[0])
+  res.render("address-book/edit", rows[0]);
 });
 
 // 處理編輯的表單
@@ -197,7 +197,18 @@ router.put("/api/:sid", upload.none(), async (req, res) => {
   if (!sid) {
     return res.json(output);
   }
-  res.json(req.body);
+
+  try {
+    const sql = "UPDATE `address_book` SET ? WHERE sid=? ";
+
+    const [result] = await db.query(sql, [req.body, sid]);
+    output.result = result;
+    output.success = !!(result.affectedRows && result.changedRows);
+  } catch (ex) {
+    output.error = ex;
+  }
+
+  res.json(output);
 });
 
 export default router;
