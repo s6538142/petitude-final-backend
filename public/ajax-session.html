@@ -11,7 +11,9 @@
     <script>
       let myData;
 
-      fetch("//127.0.0.1:3001/try-sess")
+      fetch("//127.0.0.1:3001/try-sess", {
+        credentials: "include"
+      })
         .then((r) => r.json())
         .then((obj) => {
           info.innerHTML = JSON.stringify(obj, null, 4);
