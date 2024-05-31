@@ -76,7 +76,7 @@
       </div>
       <div class="modal-footer">
 
-        <button type="button" class="btn btn-primary" onclick="location.href='list.php'">到列表頁</button>
+        <button type="button" class="btn btn-primary" onclick="location.href='/address-book'">到列表頁</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">繼續編輯</button>
       </div>
     </div>
@@ -97,7 +97,7 @@
       </div>
       <div class="modal-footer">
 
-        <button type="button" class="btn btn-primary" onclick="location.href='list.php'">到列表頁</button>
+        <button type="button" class="btn btn-primary" onclick="location.href='/address-book'">到列表頁</button>
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">繼續編輯</button>
       </div>
     </div>
@@ -142,8 +142,8 @@
     if (isPass) {
       const fd = new FormData(document.form1); // 沒有外觀的表單物件
 
-      fetch('edit-api.php', {
-        method: 'POST',
+      fetch(`/address-book/api/<%= sid %>`, {
+        method: 'PUT',
         body: fd, // Content-Type: multipart/form-data
       }).then(r => r.json())
         .then(data => {

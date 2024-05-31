@@ -179,10 +179,25 @@ router.get("/edit/:sid", async (req, res) => {
   }
 
   // res.json(rows[0]);
-  
+
   rows[0].birthday = moment(rows[0].birthday).format(dateFormat);
 
   res.render("address-book/edit", rows[0])
+});
+
+// 處理編輯的表單
+router.put("/api/:sid", upload.none(), async (req, res) => {
+  const output = {
+    success: false,
+    code: 0,
+    result: {},
+  };
+
+  const sid = +req.params.sid || 0;
+  if (!sid) {
+    return res.json(output);
+  }
+  res.json(req.body);
 });
 
 export default router;
