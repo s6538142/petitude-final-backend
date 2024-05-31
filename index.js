@@ -11,6 +11,7 @@ import db from "./utils/connect-mysql.js";
 import abRouter from "./routes/address-book.js";
 import cors from "cors";
 import mysql_session from "express-mysql-session";
+import bcrypt from "bcrypt";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -191,7 +192,37 @@ app.get("/login", async (req, res) => {
   res.render("login");
 });
 app.post("/login", upload.none(), async (req, res) => {
-  res.json(req.body)
+  const output = {
+    success: false,
+    code: 0,
+    body: req.body,
+  };
+
+  const sql = "SELECT * FROM members WHERE email=?";
+  const [rows] = await db.query(sql, [req.body.email]);
+
+  if (!rows.length) {
+    // 帳號是錯的
+    output.code = 400;
+    return res.json(output);
+  }
+
+  const result = await bcrypt.compare(req.body.password, rows[0].password);
+  if(!result){
+    // 密碼是錯的
+    output.code = 420;
+    return res.json(output);
+  }
+  output.success = true;
+
+  // 把狀態記錄在 session 裡
+  req.session.admin = {
+    id: rows[0].id,
+    email: rows[0].email,
+    nickname: rows[0].nickname,
+  }
+
+  res.json(output);
 });
 
 // ************
