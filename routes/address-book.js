@@ -61,7 +61,7 @@ const getListData = async (req) => {
     rows.forEach((el) => {
       const m = moment(el.birthday);
       // 無效的日期格式, 使用空字串
-      el.birthday = m.isValid() ? m.format(dateFormat) : '';
+      el.birthday = m.isValid() ? m.format(dateFormat) : "";
     });
   }
   success = true;
@@ -75,6 +75,21 @@ const getListData = async (req) => {
     qs: req.query,
   };
 };
+
+// middleware
+router.use((req, res, next) => {
+  let u = req.url.split("?")[0];
+  if (u === "/") {
+    return next();
+  }
+  if (req.session.admin) {
+    // 有登入, 就通過
+    next();
+  } else {
+    // 沒有登入, 就跳到登入頁
+    res.redirect("/login");
+  }
+});
 
 router.get("/", async (req, res) => {
   res.locals.title = "通訊錄列表 | " + res.locals.title;
