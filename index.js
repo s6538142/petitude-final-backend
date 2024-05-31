@@ -54,6 +54,7 @@ app.use(
 // 自訂頂層的 middleware
 app.use((req, res, next) => {
   res.locals.title = "小新的網站";
+  res.locals.session = req.session; // 讓 template 可以使用 session
 
   next();
 });
@@ -208,7 +209,7 @@ app.post("/login", upload.none(), async (req, res) => {
   }
 
   const result = await bcrypt.compare(req.body.password, rows[0].password);
-  if(!result){
+  if (!result) {
     // 密碼是錯的
     output.code = 420;
     return res.json(output);
@@ -220,11 +221,15 @@ app.post("/login", upload.none(), async (req, res) => {
     id: rows[0].id,
     email: rows[0].email,
     nickname: rows[0].nickname,
-  }
+  };
 
   res.json(output);
 });
 
+app.get("/logout", (req, res) => {
+  delete req.session.admin;
+  res.redirect("/");
+});
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
