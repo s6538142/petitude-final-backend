@@ -10,6 +10,7 @@ import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
 import abRouter from "./routes/address-book.js";
 import cors from "cors";
+import mysql_session from "express-mysql-session";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -31,11 +32,16 @@ const corsOptions = {
   },
 };
 app.use(cors(corsOptions));
+
+const MysqlStore = mysql_session(session);
+const sessionStore = new MysqlStore({}, db);
+
 app.use(
   session({
     saveUninitialized: false,
     resave: false,
     secret: "dkfgdlkg8496749KHJKHLd",
+    store: sessionStore,
     /*
     cookie: {
       maxAge: 1800_000
