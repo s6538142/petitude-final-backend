@@ -148,7 +148,7 @@ router.delete("/api/:sid", async (req, res) => {
   const output = {
     success: false,
     code: 0,
-    result: {}
+    result: {},
   };
 
   const sid = +req.params.sid || 0;
@@ -159,9 +159,26 @@ router.delete("/api/:sid", async (req, res) => {
   const sql = `DELETE FROM address_book WHERE sid=${sid}`;
   const [result] = await db.query(sql);
   output.result = result;
-  output.success = !! result.affectedRows;
+  output.success = !!result.affectedRows;
 
   res.json(output);
+});
+
+// 編輯的表單頁
+router.get("/edit/:sid", async (req, res) => {
+  const sid = +req.params.sid || 0;
+  if (!sid) {
+    return res.redirect("/address-book");
+  }
+
+  const sql = `SELECT * FROM address_book WHERE sid=${sid}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    // 沒有該筆資料
+    return res.redirect("/address-book");
+  }
+
+  res.json(rows[0]);
 });
 
 export default router;
