@@ -9,6 +9,7 @@ import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
 import abRouter from "./routes/address-book.js";
+import cors from "cors";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -22,7 +23,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 只會解析 application/json
 app.use(express.json());
-
+app.use(cors());
 app.use(
   session({
     saveUninitialized: false,
@@ -168,7 +169,7 @@ app.get("/try-db", async (req, res) => {
 });
 
 app.get("/yahoo", async (req, res) => {
-  const r = await fetch('https://tw.yahoo.com/');
+  const r = await fetch("https://tw.yahoo.com/");
   const txt = await r.text();
   res.send(txt);
 });
