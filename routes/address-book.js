@@ -178,7 +178,8 @@ router.get("/edit/:sid", async (req, res) => {
     return res.redirect("/address-book");
   }
 
-  res.json(rows[0]);
+  // res.json(rows[0]);
+  res.render("address-book/edit", rows[0])
 });
 
 export default router;
