@@ -105,5 +105,61 @@
 </div>
 
 <%- include('../parts/scripts') %>
+<script>
+  const nameField = document.form1.name;
+  const emailField = document.form1.email;
 
+  function validateEmail(email) {
+    const re =
+      /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+  }
+
+  const sendData = e => {
+    e.preventDefault(); // 不要讓 form1 以傳統的方式送出
+
+    nameField.style.border = '1px solid #CCCCCC';
+    nameField.nextElementSibling.innerText = '';
+    emailField.style.border = '1px solid #CCCCCC';
+    emailField.nextElementSibling.innerText = '';
+    // TODO: 欄位資料檢查
+
+    let isPass = true;  // 表單有沒有通過檢查
+    if (nameField.value.length < 2) {
+      isPass = false;
+      nameField.style.border = '1px solid red';
+      nameField.nextElementSibling.innerText = '請填寫正確的姓名';
+
+    }
+    if (!validateEmail(emailField.value)) {
+      isPass = false;
+      emailField.style.border = '1px solid red';
+      emailField.nextElementSibling.innerText = '請填寫正確的 Email';
+    }
+
+
+    // 有通過檢查, 才要送表單
+    if (isPass) {
+      const fd = new FormData(document.form1); // 沒有外觀的表單物件
+
+      fetch('edit-api.php', {
+        method: 'POST',
+        body: fd, // Content-Type: multipart/form-data
+      }).then(r => r.json())
+        .then(data => {
+          console.log(data);
+          if (data.success) {
+            myModal.show();
+          } else {
+            myModal2.show();
+          }
+        })
+        .catch(ex => console.log(ex))
+    }
+  };
+
+  const myModal = new bootstrap.Modal('#staticBackdrop')
+  const myModal2 = new bootstrap.Modal('#staticBackdrop2')
+
+</script>
 <%- include('../parts/html-foot') %>
