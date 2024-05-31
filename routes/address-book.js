@@ -25,8 +25,8 @@ const getListData = async (req) => {
   if (keyword) {
     // where += ` AND \`name\` LIKE '%${keyword}%' `; // 沒有處理 SQL injection
     const keyword_ = db.escape(`%${keyword}%`);
-    console.log(keyword_);
-    where += ` AND \`name\` LIKE ${keyword_} `; // 處理 SQL injection
+    // console.log(keyword_);
+    where += ` AND ( \`name\` LIKE ${keyword_} OR \`mobile\` LIKE ${keyword_} ) `; // 處理 SQL injection
   }
   if (birth_begin) {
     const m = moment(birth_begin);
