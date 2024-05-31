@@ -187,6 +187,13 @@ app.get("/yahoo", async (req, res) => {
   res.send(txt);
 });
 
+app.get("/login", async (req, res) => {
+  res.render("login");
+});
+app.post("/login", upload.none(), async (req, res) => {
+  res.json(req.body)
+});
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
