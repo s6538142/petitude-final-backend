@@ -79,7 +79,7 @@ const getListData = async (req) => {
 // middleware
 router.use((req, res, next) => {
   let u = req.url.split("?")[0];
-  if (u === "/") {
+  if (["/", "/api"].includes(u)) {
     return next();
   }
   if (req.session.admin) {
