@@ -1,6 +1,7 @@
 // console.log(process.env.DB_HOST);
 // console.log(process.env.DB_USER);
 
+import jwt from "jsonwebtoken";
 import express from "express";
 import multer from "multer";
 import upload from "./utils/upload-imgs.js";
@@ -230,6 +231,18 @@ app.get("/logout", (req, res) => {
   delete req.session.admin;
   res.redirect("/");
 });
+
+app.get("/jwt1", (req, res) => {
+  const data = {
+    id: 17,
+    account: "shin"
+  };
+
+  const token = jwt.sign(data, process.env.JWT_KEY);
+  res.send(token);
+  // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcsImFjY291bnQiOiJzaGluIiwiaWF0IjoxNzE5MTkzMTMwfQ.6ta85NzTZAICtcFfyLkkSHsfaxBa8BjDFEd2dCy7CvY
+});
+
 // ************
 // 設定靜態內容資料夾
 app.use(express.static("public"));
