@@ -29,7 +29,7 @@ app.use(express.json());
 const corsOptions = {
   credentials: true,
   origin: (origin, cb) => {
-    console.log({ origin });
+    // console.log({ origin });
     cb(null, true); // 全部都允許
   },
 };
@@ -235,12 +235,25 @@ app.get("/logout", (req, res) => {
 app.get("/jwt1", (req, res) => {
   const data = {
     id: 17,
-    account: "shin"
+    account: "shin",
   };
 
   const token = jwt.sign(data, process.env.JWT_KEY);
   res.send(token);
-  // eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcsImFjY291bnQiOiJzaGluIiwiaWF0IjoxNzE5MTkzMTMwfQ.6ta85NzTZAICtcFfyLkkSHsfaxBa8BjDFEd2dCy7CvY
+});
+app.get("/jwt2", (req, res) => {
+  const token =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcsImFjY291bnQiOiJzaGluIiwiaWF0IjoxNzE5MTkzMTMwfQ.6ta85NzTZAICtcFfyLkkSHsfaxBa8BjDFEd2dCy7CvY";
+
+  let payload = {};
+  try {
+    payload = jwt.verify(token, process.env.JWT_KEY);
+  } catch (ex) {
+    // 如果 token 是無效的
+    payload = { ex };
+  }
+
+  res.send(payload);
 });
 
 // ************
