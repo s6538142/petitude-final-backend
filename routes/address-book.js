@@ -75,7 +75,7 @@ const getListData = async (req) => {
     qs: req.query,
   };
 };
-
+/*
 // 模擬網路延遲的狀況 middleware
 router.use((req, res, next) => {
   const ms = 100 + Math.floor(Math.random() * 2000);
@@ -83,6 +83,7 @@ router.use((req, res, next) => {
     next();
   }, ms);
 });
+*/
 
 // middleware
 router.use((req, res, next) => {
