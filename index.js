@@ -232,6 +232,54 @@ app.get("/logout", (req, res) => {
   res.redirect("/");
 });
 
+app.post("/login-jwt", async (req, res) => {
+  const output = {
+    success: false,
+    code: 0,
+    body: req.body,
+    data: {
+      sid: 0,
+      email: "",
+      nickname: "",
+      token: "",
+    },
+  };
+
+  const sql = "SELECT * FROM members WHERE email=?";
+  const [rows] = await db.query(sql, [req.body.email]);
+
+  if (!rows.length) {
+    // 帳號是錯的
+    output.code = 400;
+    return res.json(output);
+  }
+
+  const result = await bcrypt.compare(req.body.password, rows[0].password);
+  if (!result) {
+    // 密碼是錯的
+    output.code = 420;
+    return res.json(output);
+  }
+  output.success = true;
+
+  // 沒有要記錄登入狀態, 打包 JWT
+  const payload = {
+    id: rows[0].id,
+    email: rows[0].email,
+  };
+
+  const token = jwt.sign(payload, process.env.JWT_KEY);
+
+  output.data = {
+    id: rows[0].id,
+    email: rows[0].email,
+    nickname: rows[0].nickname,
+    token,
+  };
+
+  res.json(output);
+});
+
 app.get("/jwt1", (req, res) => {
   const data = {
     id: 17,
