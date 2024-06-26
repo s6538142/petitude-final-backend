@@ -57,6 +57,15 @@ app.use((req, res, next) => {
   res.locals.title = "小新的網站";
   res.locals.session = req.session; // 讓 template 可以使用 session
 
+  const auth = req.get("Authorization"); // 先拿到檔頭的 Authorization 項目值
+  if (auth && auth.indexOf("Bearer ") === 0) {
+    const token = auth.slice(7);
+
+    try {
+      req.my_jwt = jwt.verify(token, process.env.JWT_KEY);
+    } catch (ex) {}
+  }
+
   next();
 });
 
@@ -280,6 +289,9 @@ app.post("/login-jwt", async (req, res) => {
   res.json(output);
 });
 
+app.get("/jwt-data", (req, res) => {
+  res.json(req.my_jwt);
+});
 app.get("/jwt1", (req, res) => {
   const data = {
     id: 17,
