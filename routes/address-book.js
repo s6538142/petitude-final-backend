@@ -86,6 +86,7 @@ router.use((req, res, next) => {
 */
 
 // middleware
+/*
 router.use((req, res, next) => {
   let u = req.url.split("?")[0];
   if (["/", "/api"].includes(u)) {
@@ -99,7 +100,7 @@ router.use((req, res, next) => {
     res.redirect("/login");
   }
 });
-
+*/
 router.get("/", async (req, res) => {
   res.locals.title = "通訊錄列表 | " + res.locals.title;
   res.locals.pageName = "ab_list";
