@@ -178,8 +178,14 @@ router.delete("/api/:sid", async (req, res) => {
     result: {},
   };
 
+  if(! req.my_jwt?.id){
+    // 沒有登入
+    output.code = 470;
+    return res.json(output);
+  }
   const sid = +req.params.sid || 0;
   if (!sid) {
+    output.code = 480;
     return res.json(output);
   }
 
