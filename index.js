@@ -13,6 +13,7 @@ import abRouter from "./routes/address-book.js";
 import cors from "cors";
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
+import prRouter from "./routes/product.js"
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -316,6 +317,13 @@ app.get("/jwt2", (req, res) => {
 
   res.send(payload);
 });
+
+// 商城路由開始
+
+app.use("/product", prRouter);
+
+
+// 商城路由結束
 
 // ************
 // 設定靜態內容資料夾
