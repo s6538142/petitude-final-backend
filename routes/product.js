@@ -27,6 +27,7 @@ const getListData = async (req) => {
     }
 
     if(category){
+      where += where ? ' AND ' : ' WHERE '
       switch(category){
         case 'dog':
           where += `special_needs LIKE '%犬%'`;
