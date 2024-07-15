@@ -10,6 +10,9 @@ import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
 import abRouter from "./routes/address-book.js";
+import articleRouter from "./routes/article-list.js";
+import classRouter from "./routes/class-list.js";
+import APRouter from "./routes/article-page.js";
 import cors from "cors";
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
@@ -76,6 +79,11 @@ app.get("/", (req, res) => {
 });
 
 app.use("/address-book", abRouter); // 設定地址簿路由
+
+//論壇路由
+app.use("/article-list", articleRouter);
+app.use("/class-list", classRouter);
+app.use("/article-page", APRouter);
 
 app.get("/json-sales", (req, res) => {
   const sales = [
