@@ -9,7 +9,6 @@ import admin2Router from "./routes/admin2.js";
 import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
-import abRouter from "./routes/address-book.js";
 import articleRouter from "./routes/article-list.js";
 import classRouter from "./routes/class-list.js";
 import APRouter from "./routes/article-page.js";
@@ -78,7 +77,6 @@ app.get("/", (req, res) => {
   res.render("home", { name: "Shinder" }); // 渲染首頁模板
 });
 
-app.use("/address-book", abRouter); // 設定地址簿路由
 
 //論壇路由
 app.use("/article-list", articleRouter);
@@ -199,49 +197,6 @@ app.get("/try-db", async (req, res) => {
   res.json({ results, fields }); 
 });
 
-app.get("/yahoo", async (req, res) => {
-  const r = await fetch("https://tw.yahoo.com/");
-  const txt = await r.text(); 
-  res.send(txt); 
-});
-
-app.get("/login", async (req, res) => {
-  res.render("login"); 
-});
-
-app.post("/login", upload.none(), async (req, res) => {
-  const output = {
-    success: false,
-    code: 0,
-    body: req.body,
-  };
-
-  const sql = "SELECT * FROM members WHERE email=?"; 
-  const [rows] = await db.query(sql, [req.body.email]); 
-
-  if (!rows.length) {
-    // 如果沒有找到該帳號
-    output.code = 400; 
-    return res.json(output); 
-  }
-
-  const result = await bcrypt.compare(req.body.password, rows[0].password); // 驗證密碼
-  if (!result) {
-    // 如果密碼錯誤
-    output.code = 420; // 設定錯誤碼
-    return res.json(output); // 返回錯誤響應
-  }
-  output.success = true; // 登入成功
-
-  // 記錄登入狀態在 session 中
-  req.session.admin = {
-    id: rows[0].id,
-    email: rows[0].email,
-    nickname: rows[0].nickname,
-  };
-
-  res.json(output); // 返回成功響應
-});
 
 app.get("/logout", (req, res) => {
   delete req.session.admin; // 刪除 session 中的 admin 資訊
@@ -254,75 +209,55 @@ app.post("/login-jwt", async (req, res) => {
     code: 0,
     body: req.body,
     data: {
-      sid: 0,
-      email: "",
-      nickname: "",
+      b2c_id: 0,
+      b2c_email: "",
+      b2c_name: "",
       token: "",
     },
   };
 
-  const sql = "SELECT * FROM members WHERE email=?"; 
-  const [rows] = await db.query(sql, [req.body.email]);
+  const sql = "SELECT * FROM b2c_members WHERE b2c_email=?";
+  const [rows] = await db.query(sql, [req.body.b2c_email]);
 
   if (!rows.length) {
-
-    output.code = 400; 
-    return res.json(output); 
+    // 帳號是錯的
+    output.code = 400;
+    return res.json(output);
   }
 
-  const result = await bcrypt.compare(req.body.password, rows[0].password); // 驗證密碼
+  const result = await bcrypt.compare(req.body.b2c_password, rows[0].b2c_password);
   if (!result) {
-    // 如果密碼錯誤
-    output.code = 420; 
-    return res.json(output); 
+    // 密碼是錯的
+    output.code = 420;
+    return res.json(output);
   }
-  output.success = true; 
+  output.success = true;
 
-
+  // 沒有要記錄登入狀態, 打包 JWT
   const payload = {
-    id: rows[0].id,
-    email: rows[0].email,
+    b2c_id: rows[0].b2c_id,
+    b2c_email: rows[0].b2c_email,
   };
 
-  const token = jwt.sign(payload, process.env.JWT_KEY); 
+  const token = jwt.sign(payload, process.env.JWT_KEY);
 
   output.data = {
-    id: rows[0].id,
-    email: rows[0].email,
-    nickname: rows[0].nickname,
-    token, 
+    b2c_id: rows[0].b2c_id,
+    b2c_email: rows[0].b2c_email,
+    b2c_name: rows[0].b2c_name,
+    token,
+    // role: "admin"
   };
 
-  res.json(output); 
+  res.json(output);
 });
+
+
 
 app.get("/jwt-data", (req, res) => {
-  res.json(req.my_jwt); 
+  res.json(req.my_jwt);
 });
 
-app.get("/jwt1", (req, res) => {
-  const data = {
-    id: 17,
-    account: "shin",
-  };
-
-  const token = jwt.sign(data, process.env.JWT_KEY); 
-  res.send(token); 
-});
-
-app.get("/jwt2", (req, res) => {
-  const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcsImFjY291bnQiOiJzaGluIiwiaWF0IjoxNzE5MTkzMTMwfQ.6ta85NzTZAICtcFfyLkkSHsfaxBa8BjDFEd2dCy7CvY"; // 示例 token
-
-  let payload = {};
-  try {
-    payload = jwt.verify(token, process.env.JWT_KEY); // 驗證 token
-  } catch (ex) {
-    // 如果 token 無效
-    payload = { ex }; // 返回錯誤訊息
-  }
-
-  res.send(payload); // 發送解析後的 payload
-});
 
 // 商城路由開始
 app.use("/product", prRouter); 
