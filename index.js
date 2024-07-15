@@ -17,6 +17,7 @@ import bcrypt from "bcrypt";
 import prRouter from "./routes/product.js"
 import pjRouter from "./routes/project.js"
 import rvRouter from "./routes/reservation.js"
+import memberRouter from "./routes/b2c_member.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" }); // 初始化 Multer 以將上傳的檔案暫存到 tmp_uploads 資料夾
@@ -78,6 +79,7 @@ app.get("/", (req, res) => {
 
 
 //論壇路由
+app.use("/b2c_member", memberRouter);
 app.use("/article-list", articleRouter);
 app.use("/class-list", classRouter);
 app.use("/article-page", APRouter);
