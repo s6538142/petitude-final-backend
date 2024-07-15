@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 import express from "express";
 import multer from "multer";
 import upload from "./utils/upload-imgs.js";
-import admin2Router from "./routes/admin2.js";
 import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
@@ -83,14 +82,7 @@ app.use("/article-list", articleRouter);
 app.use("/class-list", classRouter);
 app.use("/article-page", APRouter);
 
-app.get("/json-sales", (req, res) => {
-  const sales = [
-    { name: "Bill", age: 28, id: "A001" },
-    { name: "Peter", age: 32, id: "A002" },
-    { name: "Carl", age: 29, id: "A003" },
-  ];
-  res.render("json-sales", { sales }); 
-});
+
 
 app.get("/try-qs", (req, res) => {
   res.json(req.query); 
@@ -148,8 +140,7 @@ app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
   res.json({ u }); // 返回處理後的路徑參數
 });
 
-// 使用 admin2 路由
-app.use("/admin2", admin2Router);
+
 
 app.get("/try-sess", (req, res) => {
   // 要有 session 的 middleware 才有 req.session
