@@ -1,72 +1,65 @@
 import express from "express";
+import cors from "cors";
 import db from "./../utils/connect-mysql.js";
 
 const router = express.Router();
 
-const getListData = async (req, res) => {
+// 添加 CORS 中間件
+router.use(cors());
+
+const getListData = async (req) => {
   try {
+    let success = false;
 
-    const sql = `SELECT * FROM \`project\` ${where} LIMIT ${(page - 1) * perPage},${perPage}`;
-    console.log("Executing SQL:", sql); 
-    [rows] = await db.query(sql);
-    console.log("Query result:", rows); 
 
+    const t_sql = `SELECT COUNT(1) totalRows FROM project`;
+    const [[{ totalRows }]] = await db.query(t_sql);
+
+    success = true;
+
+    return {
+      success,
+    };
   } catch (error) {
-    console.error("Error in getListData:", error);
-    return { success: false, error: "資料庫查詢錯誤", details: error.message };
+    console.error('Error in getListData:', error);
+    return { success: false, error: "Database error" };
   }
 };
 
-router.use((req, res, next) => {
-  console.log(`Project router accessed: ${req.method} ${req.url}`);
-  next();
-});
-
-router.get("/", async (req, res) => {
-  res.locals.title = "生前契約列表" + res.locals.title;
-  res.locals.pageName = "index";
-  const data = await getListData(req);
-  if (data.redirect) {
-    return res.redirect(data.redirect);
-  }
-  res.json(data); // 或者使用 res.render() 渲染頁面
-});
-
-router.get("/api", async (req, res) => {
+router.get("/", async(req, res) => {
   try {
+    res.locals.title = "契約列表" + res.locals.title;
+    res.locals.pageName = "index";
     const data = await getListData(req);
-    if (data.redirect) {
+    if(data.redirect){
       return res.redirect(data.redirect);
     }
     res.json(data);
   } catch (error) {
-    console.error("Error in /api route:", error);
-    res.status(500).json({ success: false, error: "伺服器錯誤", details: error.message });
+    console.error('Error in root route:', error);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
-router.get("/api/:project_id", async (req, res) => {
+router.get("/api/:project_id", async(req, res) => {
   try {
-    const project_id = parseInt(req.params.project_id, 10) || 0;
+    const project_id = +req.params.project_id || 0;
     if (!project_id) {
-      return res.json({ success: false, error: "沒有編號" });
+      return res.status(400).json({ success: false, error: "沒有編號" });
     }
 
-    const [rows] = await db.query("SELECT * FROM project WHERE project_id=?", [project_id]);
+    const sql = `SELECT * FROM project WHERE project_id=?`;
+    const [rows] = await db.query(sql, [project_id]);
+    
     if (!rows.length) {
-      return res.json({ success: false, error: "沒有該筆資料" });
+      return res.status(404).json({ success: false, error: "沒有該筆資料" });
     }
 
     res.json({ success: true, data: rows[0] });
   } catch (error) {
-    console.error("Error in get project by ID:", error);
-    res.status(500).json({ success: false, error: "伺服器錯誤" });
+    console.error('Error in single project route:', error);
+    res.status(500).json({ success: false, error: "Server error" });
   }
-});
-
-router.get("/test", (req, res) => {
-  console.log("Test route accessed");
-  res.send({ message: "Test route working", data: "Some test data" });
 });
 
 export default router;
