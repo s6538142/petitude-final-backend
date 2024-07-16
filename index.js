@@ -16,6 +16,7 @@ import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
 import prRouter from "./routes/product.js"
 import pjRouter from "./routes/project.js"
+import bkRouter from "./routes/project.js"
 import rvRouter from "./routes/reservation.js"
 import memberRouter from "./routes/b2c_member.js";
 
@@ -129,9 +130,9 @@ app.get("/products/:pid", (req, res) => {
   res.json(req.params.pid); 
 });
 
-// 獲取契約 ID
+
 app.get("/project/:project_id", (req, res) => {
-  res.json(req.params.project_id); // 返回契約 ID
+  res.json(req.params.project_id); 
 });
 
 // 正則表達式路由
@@ -258,7 +259,10 @@ app.use("/product", prRouter);
 // 商城路由結束
 
 // 生命禮儀路由開始
-app.use("/project", pjRouter); 
+app.use("/project", pjRouter);
+app.use("/reservation", rvRouter);
+app.use("/booking", bkRouter);
+// 這行是連到routes/project.js/reservation.js資料夾裡的東西
 
 // 生命禮儀路由結束
 
