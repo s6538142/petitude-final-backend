@@ -2,6 +2,7 @@ import express from "express";
 import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
 import upload from "../utils/upload-imgs.js";
+import bcrypt from "bcrypt";
 
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
@@ -23,10 +24,8 @@ const getListData = async (req) => {
 
   let where = " WHERE 1 ";
   if (keyword) {
-    // where += ` AND \`name\` LIKE '%${keyword}%' `; // 沒有處理 SQL injection
     const keyword_ = db.escape(`%${keyword}%`);
-    // console.log(keyword_);
-    where += ` AND ( \`b2c_name\` LIKE ${keyword_} OR \`b2c_mobile\` LIKE ${keyword_} ) `; // 處理 SQL injection
+    where += ` AND ( \`b2c_name\` LIKE ${keyword_} OR \`b2c_mobile\` LIKE ${keyword_} ) `;
   }
   if (birth_begin) {
     const m = moment(birth_begin);
@@ -59,9 +58,8 @@ const getListData = async (req) => {
     console.log(sql);
     [rows] = await db.query(sql);
     rows.forEach((el) => {
-      const m = moment(el.birthday);
-      // 無效的日期格式, 使用空字串
-      el.birthday = m.isValid() ? m.format(dateFormat) : "";
+      const m = moment(el.b2c_birthday);
+      el.b2c_birthday = m.isValid() ? m.format(dateFormat) : "";
     });
   }
   success = true;
@@ -75,43 +73,6 @@ const getListData = async (req) => {
     qs: req.query,
   };
 };
-/*
-// 模擬網路延遲的狀況 middleware
-router.use((req, res, next) => {
-  const ms = 100 + Math.floor(Math.random() * 2000);
-  setTimeout(() => {
-    next();
-  }, ms);
-});
-*/
-
-// middleware
-/*
-router.use((req, res, next) => {
-  let u = req.url.split("?")[0];
-  if (["/", "/api"].includes(u)) {
-    return next();
-  }
-  if (req.session.admin) {
-    // 有登入, 就通過
-    next();
-  } else {
-    // 沒有登入, 就跳到登入頁
-    res.redirect("/login");
-  }
-});
-*/
-// router.get("/", async (req, res) => {
-//   res.locals.title = "通訊錄列表 | " + res.locals.title;
-//   res.locals.pageName = "b2c_list";
-//   const data = await getListData(req);
-//   if (data.redirect) {
-//     return res.redirect(data.redirect);
-//   }
-//   if (data.success) {
-//     res.render("address-book/list", data);
-//   }
-// });
 
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
@@ -123,54 +84,32 @@ router.get("/add", async (req, res) => {
   res.locals.pageName = "b2c_add";
   res.render("address-book/add");
 });
-/*
-// 處理 multipart/form-data
-router.post("/add", [upload.none()], async (req, res) => {
-  res.json(req.body);
-});
-*/
 
 router.post("/add", async (req, res) => {
-  // TODO: 欄位資料的檢查
-
-  /*
-  const sql = "INSERT INTO address_book (`name`, `email`, `mobile`, `birthday`, `address`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())";
-  const [ result ] = await db.query(sql, [
-    req.body.name,
-    req.body.email,
-    req.body.mobile,
-    req.body.birthday,
-    req.body.address,
-  ]);
-*/
-
   let body = { ...req.body };
-  body.created_at = new Date();
 
-  const m = moment(body.birthday);
-  body.birthday = m.isValid() ? m.format(dateFormat) : null;
+  // 處理生日日期
+  // const m = moment(body.b2c_birthday);
+  // body.b2c_birthday = m.isValid() ? m.format(dateFormat) : null;
 
-  const sql = "INSERT INTO b2c_members SET ?";
-  const [result] = await db.query(sql, [body]);
+  try {
+    // 加密密碼
+    const saltRounds = 8;
+    body.b2c_password = await bcrypt.hash(body.b2c_password, saltRounds);
 
-  res.json({
-    result,
-    success: !!result.affectedRows,
-  });
-  /*
-  {
-    "fieldCount": 0,
-    "affectedRows": 1,
-    "insertId": 5007,
-    "info": "",
-    "serverStatus": 2,
-    "warningStatus": 0,
-    "changedRows": 0
+    const sql = "INSERT INTO b2c_members SET ?";
+    const [result] = await db.query(sql, [body]);
+
+    res.json({
+      result,
+      success: !!result.affectedRows,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "Server error" });
   }
-  */
 });
 
-// 刪除資料的 API
 router.delete("/api/:b2c_id", async (req, res) => {
   const output = {
     success: false,
@@ -178,8 +117,7 @@ router.delete("/api/:b2c_id", async (req, res) => {
     result: {},
   };
 
-  if(! req.my_jwt?.id){
-    // 沒有登入
+  if (!req.my_jwt?.id) {
     output.code = 470;
     return res.json(output);
   }
@@ -197,7 +135,6 @@ router.delete("/api/:b2c_id", async (req, res) => {
   res.json(output);
 });
 
-// 編輯的表單頁
 router.get("/edit/:b2c_id", async (req, res) => {
   const b2c_id = +req.params.b2c_id || 0;
   if (!b2c_id) {
@@ -207,18 +144,14 @@ router.get("/edit/:b2c_id", async (req, res) => {
   const sql = `SELECT * FROM b2c_members WHERE b2c_id=${b2c_id}`;
   const [rows] = await db.query(sql);
   if (!rows.length) {
-    // 沒有該筆資料
     return res.redirect("/address-book");
   }
 
-  // res.json(rows[0]);
-
-  rows[0].birthday = moment(rows[0].birthday).format(dateFormat);
+  rows[0].b2c_birthday = moment(rows[0].b2c_birthday).format(dateFormat);
 
   res.render("address-book/edit", rows[0]);
 });
 
-// 取得單項資料的 API
 router.get("/api/:b2c_id", async (req, res) => {
   const b2c_id = +req.params.b2c_id || 0;
   if (!b2c_id) {
@@ -228,17 +161,15 @@ router.get("/api/:b2c_id", async (req, res) => {
   const sql = `SELECT * FROM b2c_members WHERE b2c_id=${b2c_id}`;
   const [rows] = await db.query(sql);
   if (!rows.length) {
-    // 沒有該筆資料
     return res.json({ success: false, error: "沒有該筆資料" });
   }
 
-  const m = moment(rows[0].birthday);
-  rows[0].birthday = m.isValid() ? m.format(dateFormat) : "";
+  const m = moment(rows[0].b2c_birthday);
+  rows[0].b2c_birthday = m.isValid() ? m.format(dateFormat) : "";
 
   res.json({ success: true, data: rows[0] });
 });
 
-// 處理編輯的表單
 router.put("/api/:b2c_id", upload.none(), async (req, res) => {
   const output = {
     success: false,
@@ -252,12 +183,17 @@ router.put("/api/:b2c_id", upload.none(), async (req, res) => {
   }
 
   let body = { ...req.body };
-  const m = moment(body.birthday);
-  body.birthday = m.isValid() ? m.format(dateFormat) : null;
+  const m = moment(body.b2c_birthday);
+  body.b2c_birthday = m.isValid() ? m.format(dateFormat) : null;
 
   try {
-    const sql = "UPDATE `b2c_members` SET ? WHERE b2c_id=? ";
+    // 如果提供了新的密碼，則加密
+    if (body.b2c_password) {
+      const saltRounds = 8;
+      body.b2c_password = await bcrypt.hash(body.b2c_password, saltRounds);
+    }
 
+    const sql = "UPDATE `b2c_members` SET ? WHERE b2c_id=? ";
     const [result] = await db.query(sql, [body, b2c_id]);
     output.result = result;
     output.success = !!(result.affectedRows && result.changedRows);
