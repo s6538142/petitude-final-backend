@@ -8,9 +8,8 @@ import upload from "./utils/upload-imgs.js";
 import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
-import classRouter from "./routes/class-list.js";
-import articleRouter from "./routes/article-list.js";
-import APRouter from "./routes/article-page.js";
+import classRouter from "./routes/class.js";
+import articleRouter from "./routes/article.js";
 import cors from "cors";
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
@@ -252,9 +251,8 @@ app.use("/project", pjRouter);
 // 生命禮儀路由結束
 
 //論壇路由開始
-app.use("/article-list", articleRouter);
-app.use("/class-list", classRouter);
-app.use("/article-page", APRouter);
+app.use("/class", classRouter);
+app.use("/article", articleRouter);
 //論壇路由結束
 
 // ************
