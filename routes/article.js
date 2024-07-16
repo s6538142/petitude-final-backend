@@ -2,8 +2,30 @@ import express from "express";
 import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
 
-const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
+const dateFormat = "YYYY-MM-DD";
+
+// 新增文章的 API
+router.post("/add", async (req, res) => {
+  try {
+    const { article_name, article_content, article_topic } = req.body;
+    const article_date = moment().format(dateFormat);
+
+    // 可以加入其他欄位驗證或處理
+    const sql = `
+      INSERT INTO article (article_date, article_name, article_content, fk_class_id)
+      VALUES (?, ?, ?, ?)
+    `;
+    const values = [article_date, article_name, article_content, article_topic];
+
+    await db.query(sql, values);
+
+    res.json({ success: true, message: "Article added successfully" });
+  } catch (error) {
+    console.error("Error adding article:", error);
+    res.status(500).json({ success: false, error: "Failed to add article" });
+  }
+});
 
 // fetch article and messages
 const getArticleAndMessages = async (article_id) => {
