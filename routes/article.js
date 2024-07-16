@@ -5,7 +5,7 @@ import db from "../utils/connect-mysql.js";
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
 
-// Function to fetch article and associated messages
+// fetch article and messages
 const getArticleAndMessages = async (article_id) => {
   try {
     // Fetch article
@@ -28,7 +28,7 @@ const getArticleAndMessages = async (article_id) => {
       ORDER BY m.message_date DESC`;
     const [messageRows] = await db.query(messageSql, [article_id]);
 
-    // Format article date
+    // 格式化文章日期
     articleRows[0].article_date = moment(articleRows[0].article_date).isValid()
       ? moment(articleRows[0].article_date).format(dateFormat)
       : "";
