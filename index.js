@@ -8,15 +8,15 @@ import upload from "./utils/upload-imgs.js";
 import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
-import articleRouter from "./routes/article-list.js";
 import classRouter from "./routes/class-list.js";
+import articleRouter from "./routes/article-list.js";
 import APRouter from "./routes/article-page.js";
 import cors from "cors";
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
-import prRouter from "./routes/product.js"
-import pjRouter from "./routes/project.js"
-import rvRouter from "./routes/reservation.js"
+import prRouter from "./routes/product.js";
+import pjRouter from "./routes/project.js";
+import rvRouter from "./routes/reservation.js";
 import memberRouter from "./routes/b2c_member.js";
 
 // tmp_uploads 暫存的資料夾
@@ -55,10 +55,10 @@ app.use(
 
 // 自訂頂層的 middleware
 app.use((req, res, next) => {
-  res.locals.title = "小新的網站"; 
+  res.locals.title = "小新的網站";
   res.locals.session = req.session;
 
-  const auth = req.get("Authorization"); 
+  const auth = req.get("Authorization");
   if (auth && auth.indexOf("Bearer ") === 0) {
     const token = auth.slice(7); // 提取 token
 
@@ -77,21 +77,14 @@ app.get("/", (req, res) => {
   res.render("home", { name: "Shinder" }); // 渲染首頁模板
 });
 
-
-//論壇路由
 app.use("/b2c_member", memberRouter);
-app.use("/article-list", articleRouter);
-app.use("/class-list", classRouter);
-app.use("/article-page", APRouter);
-
-
 
 app.get("/try-qs", (req, res) => {
-  res.json(req.query); 
+  res.json(req.query);
 });
 
 app.get("/try-post-form", (req, res) => {
-  res.render("try-post-form"); 
+  res.render("try-post-form");
 });
 
 // const urlencodedParser = express.urlencoded({extended: true});
@@ -106,12 +99,12 @@ app.post("/try-post", (req, res) => {
 app.post("/try-upload", upload.single("avatar"), (req, res) => {
   res.json({
     body: req.body,
-    file: req.file, 
+    file: req.file,
   });
 });
 
 app.post("/try-uploads", upload.array("photos"), (req, res) => {
-  res.json(req.files); 
+  res.json(req.files);
 });
 
 // 嚴謹的路徑規則
@@ -124,9 +117,8 @@ app.get("/my-params1/:action?/:id?", (req, res) => {
   res.json(req.params); // 返回路由參數
 });
 
-
 app.get("/products/:pid", (req, res) => {
-  res.json(req.params.pid); 
+  res.json(req.params.pid);
 });
 
 // 獲取契約 ID
@@ -141,8 +133,6 @@ app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
   u = u.split("-").join(""); // 移除 '-' 字符
   res.json({ u }); // 返回處理後的路徑參數
 });
-
-
 
 app.get("/try-sess", (req, res) => {
   // 要有 session 的 middleware 才有 req.session
@@ -184,12 +174,11 @@ app.get("/try-moment2", (req, res) => {
 });
 
 app.get("/try-db", async (req, res) => {
-  const sql = "SELECT * FROM address_book LIMIT 3"; 
+  const sql = "SELECT * FROM address_book LIMIT 3";
 
-  const [results, fields] = await db.query(sql); 
-  res.json({ results, fields }); 
+  const [results, fields] = await db.query(sql);
+  res.json({ results, fields });
 });
-
 
 app.get("/logout", (req, res) => {
   delete req.session.admin; // 刪除 session 中的 admin 資訊
@@ -218,7 +207,10 @@ app.post("/login-jwt", async (req, res) => {
     return res.json(output);
   }
 
-  const result = await bcrypt.compare(req.body.b2c_password, rows[0].b2c_password);
+  const result = await bcrypt.compare(
+    req.body.b2c_password,
+    rows[0].b2c_password
+  );
   if (!result) {
     // 密碼是錯的
     output.code = 420;
@@ -245,22 +237,25 @@ app.post("/login-jwt", async (req, res) => {
   res.json(output);
 });
 
-
-
 app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
 
-
 // 商城路由開始
-app.use("/product", prRouter); 
+app.use("/product", prRouter);
 
 // 商城路由結束
 
 // 生命禮儀路由開始
-app.use("/project", pjRouter); 
+app.use("/project", pjRouter);
 
 // 生命禮儀路由結束
+
+//論壇路由開始
+app.use("/article-list", articleRouter);
+app.use("/class-list", classRouter);
+app.use("/article-page", APRouter);
+//論壇路由結束
 
 // ************
 // 設定靜態內容資料夾
@@ -270,10 +265,10 @@ app.use("/bootstrap", express.static("node_modules/bootstrap/dist")); // 設定 
 // ************ 404 處理要放在所有的路由設定之後
 // use 接受所有 HTTP 方法
 app.use((req, res) => {
-  res.type("text/plain").status(404).send("走錯路了"); 
+  res.type("text/plain").status(404).send("走錯路了");
 });
 
-const port = process.env.WEB_PORT || 3002; 
+const port = process.env.WEB_PORT || 3002;
 app.listen(port, () => {
   console.log(`Server start: port ${port}`);
 });
