@@ -7,6 +7,8 @@ import bcrypt from "bcrypt";
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
 
+const formatDate = (date) => moment(date).format(dateFormat);
+
 const getListData = async (req) => {
   let success = false;
   let redirect = "";
@@ -79,18 +81,10 @@ router.get("/api", async (req, res) => {
   res.json(data);
 });
 
-router.get("/add", async (req, res) => {
-  res.locals.title = "新增通訊錄 | " + res.locals.title;
-  res.locals.pageName = "b2c_add";
-  res.render("address-book/add");
-});
+
 
 router.post("/add", async (req, res) => {
   let body = { ...req.body };
-
-  // 處理生日日期
-  // const m = moment(body.b2c_birthday);
-  // body.b2c_birthday = m.isValid() ? m.format(dateFormat) : null;
 
   try {
     // 加密密碼
@@ -152,6 +146,7 @@ router.get("/edit/:b2c_id", async (req, res) => {
   res.render("address-book/edit", rows[0]);
 });
 
+// 更新 GET 請求處理函數
 router.get("/api/:b2c_id", async (req, res) => {
   const b2c_id = +req.params.b2c_id || 0;
   if (!b2c_id) {
@@ -164,12 +159,13 @@ router.get("/api/:b2c_id", async (req, res) => {
     return res.json({ success: false, error: "沒有該筆資料" });
   }
 
-  const m = moment(rows[0].b2c_birthday);
-  rows[0].b2c_birthday = m.isValid() ? m.format(dateFormat) : "";
+  const row = rows[0];
+  row.b2c_birthday = formatDate(row.b2c_birthday); // 格式化日期
 
-  res.json({ success: true, data: rows[0] });
+  res.json({ success: true, data: row });
 });
 
+// 更新 PUT 請求處理函數
 router.put("/api/:b2c_id", upload.none(), async (req, res) => {
   const output = {
     success: false,
@@ -183,8 +179,8 @@ router.put("/api/:b2c_id", upload.none(), async (req, res) => {
   }
 
   let body = { ...req.body };
-  const m = moment(body.b2c_birthday);
-  body.b2c_birthday = m.isValid() ? m.format(dateFormat) : null;
+  const m = moment(body.b2c_birth);
+  body.b2c_birth = m.isValid() ? m.format(dateFormat) : null;
 
   try {
     // 如果提供了新的密碼，則加密
@@ -205,3 +201,4 @@ router.put("/api/:b2c_id", upload.none(), async (req, res) => {
 });
 
 export default router;
+
