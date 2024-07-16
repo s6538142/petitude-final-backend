@@ -1,149 +1,132 @@
-// 線上預約
 import express from "express";
 import moment from "moment-timezone";
 import db from "./../utils/connect-mysql.js";
 import upload from "./../utils/upload-imgs.js";
-// JWT裡面會有primaryKey, 就可以自動帶入資料
 
-
-// 日期格式設定
+// 先設定日期格式
 const dateFormat = "YYYY-MM-DD";
-// 創建路由器
 const router = express.Router();
 
-// 獲取列表數據的函數
-// 該函數用於從資料庫中獲取線上預約的列表數據，並返回相關的分頁資訊
-// 主要用於處理線上預約列表的分頁和篩選，根據用戶的查詢條件返回相應的資料和分頁資訊
 const getListData = async (req) => {
-    let success = false; //表示操作是否成功，初始值為 false
-    let redirect = ""; //存儲重定向的 URL，初始值為空字符串
+  let success = false;
+  let redirect = "";
 
-    const perPage = 25; // 每頁最多有幾筆資料
-    let page = parseInt(req.query.page) || 1; // 從 query string 最得 page 的值
-    if (page < 1) {
-        redirect = "?page=1";
+  const perPage = 25; // 每頁最多有幾筆資料
+  let page = parseInt(req.query.page) || 1; // 從 query string 最得 page 的值
+  if (page < 1) {
+    redirect = "?page=1";
     return { success, redirect };
-    }
+  }
 
-    // 設定關鍵字和日期篩選條件
-    let keyword = req.query.keyword || ''; //(搜尋)若req.query.keyword有keyword則顯示, 沒有則顯示為空
-    let reservationDateBegin = req.query.reservationDateBegin || ''; // 分別為篩選的開始和結束日期
-    let reservationDateEnd = req.query.reservationDateEnd || '';
+  let keyword = req.query.keyword || ''; //(搜尋)若req.query.keyword有keyword則顯示, 沒有則顯示為空
+  // 設定查詢功能, 日期起始/結束
+  let reservationDateBegin = req.query.reservationDateBegin || '';
+  let reservationDateEnd = req.query.reservationDateEnd || '';
 
-    // 設定 SQL 查詢條件
-    let where = ' WHERE 1 ';
-    // 若有關鍵字，則將其加入查詢條件
-    if (keyword) {  
+  let where = ' WHERE 1 '; //先篩選條件, 顯示true, 0為false
+  if (keyword) {
+    // where += ` AND \`name\` LIKE '%${keyword}%' `; // 沒有處理 SQL injection
     const keyword_ = db.escape(`%${keyword}%`);
-    where += ` AND \`fk_b2c_name\` LIKE ${keyword_} OR \`fk_b2c_mobile\` LIKE ${keyword_} OR AND \`fk_b2c_email\` LIKE ${keyword_} OR AND \`reservation_note\` LIKE ${keyword_}`;// 處理 SQL injection
-    }
+    // console.log({ keyword_ }); 若查詢不到搜尋資料, 檢查是否有成功跳脫
+    where += ` AND \`reservation_date\` LIKE ${keyword_} OR \`note\` LIKE ${keyword_}`;// 處理 SQL injection
+  }
 
-      // 若有日期篩選條件，則將其加入查詢條件
-    if (reservationDateBegin) {
-        const m = moment(reservationDateBegin);
-        if (m.isValid()) {
-        where += ` AND reservation_date >= '${m.format(dateFormat)}'`;
-        }
+  // 生日範圍篩選, 若要分成兩個搜尋框搜尋begin和end, 把她拆開寫就好
+  // 在甚麼日期之後, 篩選條件出來
+  if (reservationDateBegin) {
+    const m = moment(reservationDateBegin);
+    if (m.isValid()) {
+      where += ` AND reservation_date >= '${m.format(dateFormat)}'`;
     }
-    // 在甚麼日期之前, 篩選條件出來
-    if (reservationDateEnd) {
-        const m = moment(reservationDateEnd);
-        if (m.isValid()) {
-        where += ` AND reservation_date <= '${m.format(dateFormat)}'`;
-        }
+  }
+  // 在甚麼日期之前, 篩選條件出來
+  if (reservationDateEnd) {
+    const m = moment(reservationDateEnd);
+    if (m.isValid()) {
+      where += ` AND reservation_date <= '${m.format(dateFormat)}'`;
     }
+  }
+  // 生日範圍篩選
 
-    // 計算總資料筆數和總頁數
-    // 執行計數查詢，獲取符合條件的資料總數
-    // 計算總頁數，若當前頁數>總頁數，則跳去最後一頁
-    const t_sql = `SELECT COUNT(1) totalRows FROM reservation ${where}`;
-    console.log(t_sql);
-    const [[{ totalRows }]] = await db.query(t_sql);
-    let totalPages = 0; // 總頁數, 預設0
-    let rows = []; // 分頁資料, 預設空陣列
-    if (totalRows) {
-        totalPages = Math.ceil(totalRows / perPage);
-        if (page > totalPages) {
-        redirect = `?page=${totalPages}`;
-        return { success, redirect };
-        }
+  const t_sql = ` SELECT COUNT(1) totalRows FROM reservation ${where} `;
+  console.log(t_sql);
+  const [[{ totalRows }]] = await db.query(t_sql);
+  let totalPages = 0; // 總頁數, 預設值
+  let rows = []; // 分頁資料
+  if (totalRows) {
+    totalPages = Math.ceil(totalRows / perPage);
+    if (page > totalPages) {
+      redirect = `? page = ${totalPages} `;
+      return { success, redirect };
+    }
 
     // 取得分頁資料
-    // 執行查詢，根據分頁條件獲取資料
-    // 將無效日期格式轉換為空字符串
-    const sql = `SELECT * FROM \`reservation\` ${where} ORDER BY fk_b2c_id DESC LIMIT ${
-    (page - 1) * perPage
-    },${perPage}`;
-    console.log(sql);
+    const sql = `SELECT * FROM \`reservation\` ${where} ORDER BY reservation_id DESC LIMIT ${(page - 1) * perPage
+      },${perPage}`;
+      console.log(sql);
+
     [rows] = await db.query(sql);
+    // 用foreach去把每筆日期資料轉換格式呈現
     rows.forEach((el) => {
-    const m = moment(el.reservation_date);
-    // 無效的日期格式, 使用空字串
-    el.reservation_date = m.isValid() ? m.format(dateFormat) : "";
+      el.reservation_date = moment(el.reservation_date).format(dateFormat);
     });
-    }
+  }
 
-    // 返回結果
-    success = true;
-    return {
-        success,
-        perPage,
-        page,
-        totalRows,
-        totalPages,
-        rows,
-        qs: req.query,
-    };
-    };
+  success = true;
+  return {
+    success,
+    perPage,
+    page,
+    totalRows,
+    totalPages,
+    rows,
+    qs: req.query,
+  };
+};
 
-// ---------------------------------------------------------------------
-    // middleware
-    router.use((req, res, next) => {
-    let u = req.url.split("?")[0];
-    if (["/", "/api"].includes(u)) {
-        // 上面設定不用登入通過
-        // 下面打開則要登入才能看
-        // if (u === "/") {
-        return next();
-    }
-    if (req.session.admin) {
-        // 有登入, 就通過
-        next();
-    } else {
-        // 沒有登入, 就跳到登入頁
-        res.redirect("/login");
-    }
-    });
-// ---------------------------------------------------------------------
-
-// 根據查詢參數獲取預約列表
+// route群組化 async裡面要包await
 router.get("/", async (req, res) => {
-    res.locals.title = "線上預約列表 | " + res.locals.title;
-    res.locals.pageName = "reservation-form";
-    const data = await getListData(req);
-    if (data.redirect) {
-        return res.redirect(data.redirect);
-    }
-    });
+  res.locals.title = "List | " + res.locals.title;
+  res.locals.pageName = 'reservation_list';
+  const data = await getListData(req);
+  if (data.redirect) {
+    return res.redirect(data.redirect);
+  }
+  if (data.success) {
+    res.render("reservation/list", data);
+  }
+});
 
-// 獲取預約列表的 API
+// 印出上方有const/let的變數名稱, 顯示抓取到哪些資料
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
-  res.json(data);
+  res.json(data)
 });
 
-// 顯示新增預約表單
 router.get("/add", async (req, res) => {
-  res.locals.title = "新增線上預約表單 | " + res.locals.title;
+  res.locals.title = "新增線上訂購契約 | " + res.locals.title;
   res.locals.pageName = "reservation_add";
-  res.render("reservation/add");
+  res.render("reservation/add")
 });
+// 處理 multipart/form-data
+// router.post("/add", upload.none(), async (req, res) => {
+//   res.json(req.body)
+// });
 
-// 處理新增預約的 POST 請求
 router.post("/add", async (req, res) => {
+  // const sql = "INSERT INTO address_book (`fk_b2c_id`, `fk_pet_id`, `fk_project_id`, `fk_reservation_id`, `reservation_date`, `reservation_note`) VALUES (?, ?, ?, ?, ?, ?)";
+
+  // const [result] = await db.query(sql, [
+  //   req.body.fk_b2c_id,
+  //   req.body.fk_pet_id,
+  //   req.body.fk_project_id,
+  //   req.body.fk_reservation_id,
+  //   req.body.reservation_date,
+  //   req.body.reservation_note,
+  // ]);
 
   let body = { ...req.body };
-  body.created_at = new Date();
+  // body.reservation_date = new Date();
 
   const m = moment(body.reservation_date);
   body.reservation_date = m.isValid() ? m.format(dateFormat) : null;
@@ -155,11 +138,9 @@ router.post("/add", async (req, res) => {
     result,
     success: !!result.affectedRows,
   });
-
 });
 
-
-// 刪除預約的 API
+// 刪除資料的api, 要到postman測試看看能不能刪除
 router.delete("/api/:reservation_id", async (req, res) => {
   const output = {
     success: false,
@@ -167,27 +148,22 @@ router.delete("/api/:reservation_id", async (req, res) => {
     result: {},
   };
 
-  if(! req.my_jwt?.id){
-    // 沒有登入
-    output.code = 470;
-    return res.json(output);
-  }
   const reservation_id = +req.params.reservation_id || 0;
   if (!reservation_id) {
-    output.code = 480;
     return res.json(output);
   }
 
-  const sql = `DELETE FROM reservation WHERE reservation_id=${reservation_id}`;
+    const sql = `DELETE FROM reservation WHERE reservation_id=${reservation_id}`;
   const [result] = await db.query(sql);
   output.result = result;
   output.success = !!result.affectedRows;
 
   res.json(output);
+
 });
 
 
-  // 顯示編輯預約表單
+  // 編輯的表單頁
 router.get("/edit/:reservation_id", async (req, res) => {
   const reservation_id = +req.params.reservation_id || 0;
   if (!reservation_id) {
@@ -200,20 +176,21 @@ router.get("/edit/:reservation_id", async (req, res) => {
     // 沒有該筆資料
     return res.redirect("/reservation");
   }
-
+  // res.json(rows[0]);
 
   rows[0].reservation_date = moment(rows[0].reservation_date).format(dateFormat);
 
   res.render("reservation/edit", rows[0]);
 });
 
-// 處理編輯預約的 PUT 請求
+// 處理編輯的表單
 router.put("/api/:reservation_id", upload.none(), async (req, res) => {
   const output = {
     success: false,
     code: 0,
     result: {},
   };
+
   const reservation_id = +req.params.reservation_id || 0;
   if (!reservation_id) {
     return res.json(output);
