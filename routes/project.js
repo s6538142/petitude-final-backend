@@ -10,22 +10,25 @@ router.use(cors());
 const getListData = async (req) => {
   try {
     let success = false;
-
+    let rows = [];
 
     const t_sql = `SELECT COUNT(1) totalRows FROM project`;
     const [[{ totalRows }]] = await db.query(t_sql);
 
+      // 取得分頁資料
+      const sql = `SELECT * FROM project`;
+      [rows] = await db.query(sql);
+    
     success = true;
 
     return {
-      success,
+      success, totalRows, rows,
     };
   } catch (error) {
     console.error('Error in getListData:', error);
     return { success: false, error: "Database error" };
   }
 };
-
 router.get("/", async(req, res) => {
   try {
     res.locals.title = "契約列表" + res.locals.title;
