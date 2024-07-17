@@ -13,7 +13,7 @@ import bcrypt from "bcrypt";
 import classRouter from "./routes/class.js";
 import articleRouter from "./routes/article.js";
 import cors from "cors";
-import bkRouter from "./routes/project.js";
+import bkRouter from "./routes/booking.js";
 import prRouter from "./routes/product.js";
 import pjRouter from "./routes/project.js";
 import rvRouter from "./routes/reservation.js";
@@ -269,6 +269,8 @@ app.use("/product", prRouter);
 
 // 生命禮儀路由開始
 app.use("/project", pjRouter);
+app.use("/reservation", rvRouter);
+app.use("/booking", bkRouter);
 
 // 生命禮儀路由結束
 
