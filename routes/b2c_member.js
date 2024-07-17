@@ -201,4 +201,3 @@ router.put("/api/:b2c_id", upload.none(), async (req, res) => {
 });
 
 export default router;
-
