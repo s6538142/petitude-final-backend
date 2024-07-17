@@ -31,7 +31,7 @@ const getListData = async (req) => {
     where += ` AND \`reservation_date\` LIKE ${keyword_} OR \`note\` LIKE ${keyword_}`;// 處理 SQL injection
   }
 
-  // 生日範圍篩選, 若要分成兩個搜尋框搜尋begin和end, 把她拆開寫就好
+  // 範圍篩選, 若要分成兩個搜尋框搜尋begin和end, 把她拆開寫就好
   // 在甚麼日期之後, 篩選條件出來
   if (reservationDateBegin) {
     const m = moment(reservationDateBegin);
@@ -46,7 +46,6 @@ const getListData = async (req) => {
       where += ` AND reservation_date <= '${m.format(dateFormat)}'`;
     }
   }
-  // 生日範圍篩選
 
   const t_sql = ` SELECT COUNT(1) totalRows FROM reservation ${where} `;
   console.log(t_sql);
@@ -87,13 +86,13 @@ const getListData = async (req) => {
 // route群組化 async裡面要包await
 router.get("/", async (req, res) => {
   res.locals.title = "List | " + res.locals.title;
-  res.locals.pageName = 'reservation_list';
+  res.locals.pageName = 'reservation_form';
   const data = await getListData(req);
   if (data.redirect) {
     return res.redirect(data.redirect);
   }
   if (data.success) {
-    res.render("reservation/list", data);
+    res.json("reservation/reservation-form", data);
   }
 });
 
@@ -106,7 +105,7 @@ router.get("/api", async (req, res) => {
 router.get("/add", async (req, res) => {
   res.locals.title = "新增線上訂購契約 | " + res.locals.title;
   res.locals.pageName = "reservation_add";
-  res.render("reservation/add")
+  res.json("reservation/reservation-add")
 });
 // 處理 multipart/form-data
 // router.post("/add", upload.none(), async (req, res) => {
@@ -164,50 +163,50 @@ router.delete("/api/:reservation_id", async (req, res) => {
 
 
   // 編輯的表單頁
-router.get("/edit/:reservation_id", async (req, res) => {
-  const reservation_id = +req.params.reservation_id || 0;
-  if (!reservation_id) {
-    return res.redirect("/reservation");
-  }
+// router.get("/edit/:reservation_id", async (req, res) => {
+//   const reservation_id = +req.params.reservation_id || 0;
+//   if (!reservation_id) {
+//     return res.redirect("/reservation");
+//   }
 
-  const sql = `SELECT * FROM reservation WHERE reservation_id=${reservation_id}`;
-  const [rows] = await db.query(sql);
-  if (!rows.length) {
-    // 沒有該筆資料
-    return res.redirect("/reservation");
-  }
-  // res.json(rows[0]);
+//   const sql = `SELECT * FROM reservation WHERE reservation_id=${reservation_id}`;
+//   const [rows] = await db.query(sql);
+//   if (!rows.length) {
+//     // 沒有該筆資料
+//     return res.redirect("/reservation");
+//   }
+//   // res.json(rows[0]);
 
-  rows[0].reservation_date = moment(rows[0].reservation_date).format(dateFormat);
+//   rows[0].reservation_date = moment(rows[0].reservation_date).format(dateFormat);
 
-  res.render("reservation/edit", rows[0]);
-});
+//   res.render("reservation/edit", rows[0]);
+// });
 
 // 處理編輯的表單
-router.put("/api/:reservation_id", upload.none(), async (req, res) => {
-  const output = {
-    success: false,
-    code: 0,
-    result: {},
-  };
+// router.put("/api/:reservation_id", upload.none(), async (req, res) => {
+//   const output = {
+//     success: false,
+//     code: 0,
+//     result: {},
+//   };
 
-  const reservation_id = +req.params.reservation_id || 0;
-  if (!reservation_id) {
-    return res.json(output);
-  }
+//   const reservation_id = +req.params.reservation_id || 0;
+//   if (!reservation_id) {
+//     return res.json(output);
+//   }
 
-  try {
-    const sql = "UPDATE `reservation` SET ? WHERE reservation_id=? ";
+//   try {
+//     const sql = "UPDATE `reservation` SET ? WHERE reservation_id=? ";
 
-    const [result] = await db.query(sql, [req.body, reservation_id]);
-    output.result = result;
-    output.success = !!(result.affectedRows && result.changedRows);
-  } catch (ex) {
-    output.error = ex;
-  }
+//     const [result] = await db.query(sql, [req.body, reservation_id]);
+//     output.result = result;
+//     output.success = !!(result.affectedRows && result.changedRows);
+//   } catch (ex) {
+//     output.error = ex;
+//   }
 
-  res.json(output);
-});
+//   res.json(output);
+// });
 
 
 export default router;
