@@ -111,4 +111,99 @@ router.get("/api/:pk_product_id", async(req, res) => {
   }
 });
 
+// 獲取所有縣市
+router.get("/counties", async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT * FROM county ORDER BY county_id");
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching counties:', error);
+    res.status(500).json({ success: false, error: "無法獲取縣市資料" });
+  }
+});
+
+// 獲取特定縣市的所有鄉鎮市區
+router.get("/cities/:countyId", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM city WHERE fk_county_id = ? ORDER BY city_id",
+      [req.params.countyId]
+    );
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('Error fetching cities:', error);
+    res.status(500).json({ success: false, error: "無法獲取鄉鎮市區資料", details: error.message });
+  }
+});
+
+// 結帳用路由
+
+router.post("/cartCheckout", async (req, res) => {
+  let connection;
+  try {
+    const { cartItems, ...customerInfo } = req.body;
+
+    // 開始處理資料庫新增
+    connection = await db.getConnection();
+    await connection.beginTransaction();
+
+    // 獲取縣市和鄉鎮市區的 ID
+    const [countyResult] = await connection.query(
+      "SELECT county_id FROM county WHERE county_name = ?",
+      [customerInfo.county]
+    );
+    const countyId = countyResult[0]?.county_id;
+
+    const [cityResult] = await connection.query(
+      "SELECT city_id FROM city WHERE city_name = ? AND fk_county_id = ?",
+      [customerInfo.city, countyId]
+    );
+    const cityId = cityResult[0]?.city_id;
+
+    // 新增訂單資料表
+    const [orderResult] = await connection.query(
+      `INSERT INTO request 
+      (b2c_name, payment_method, request_price, fk_county_id, fk_city_id, recipient_address, recipient_mobile, recipient_phone, request_date) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        customerInfo.buyerName,
+        customerInfo.paymentMethod,
+        cartItems.reduce((total, item) => total + item.product_price * item.qty, 0),
+        countyId,
+        cityId,
+        customerInfo.address,
+        customerInfo.mobile,
+        customerInfo.telephone
+      ]
+    );
+
+    const orderId = orderResult.insertId;
+
+    // 新增訂單詳情
+    for (const item of cartItems) {
+      await connection.query(
+        "INSERT INTO request_detail (fk_request_id, fk_product_id, purchase_quantity, purchase_price) VALUES (?, ?, ?, ?)",
+        [orderId, item.pk_product_id, item.qty, item.product_price]
+      );
+    }
+
+    // 提交表單
+    await connection.commit();
+
+    res.json({ success: true, message: "訂單已成功創建" });
+  } catch (error) {
+    // 如果出錯
+    if (connection) {
+      await connection.rollback();
+    }
+    console.error('Error in checkout:', error);
+    res.status(500).json({ success: false, error: "訂單創建失敗" });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
+
 export default router;
