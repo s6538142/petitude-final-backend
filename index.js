@@ -13,6 +13,11 @@ import abRouter from "./routes/address-book.js";
 import cors from "cors";
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
+import prRouter from "./routes/product.js"
+import pjRouter from "./routes/project.js"
+import bkRouter from "./routes/project.js"
+import rvRouter from "./routes/reservation.js"
+import memberRouter from "./routes/b2c_member.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" });
@@ -138,6 +143,12 @@ app.get("/products/:pid", (req, res) => {
   res.json(req.params.pid);
 });
 
+
+app.get("/project/:project_id", (req, res) => {
+  res.json(req.params.project_id); 
+});
+
+// 正則表達式路由
 app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
   let u = req.url.slice(3);
   u = u.split("?")[0];
@@ -314,8 +325,15 @@ app.get("/jwt2", (req, res) => {
     payload = { ex };
   }
 
-  res.send(payload);
-});
+// 商城路由結束
+
+// 生命禮儀路由開始
+app.use("/project", pjRouter);
+app.use("/reservation", rvRouter);
+app.use("/booking", bkRouter);
+// 這行是連到routes/project.js/reservation.js資料夾裡的東西
+
+// 生命禮儀路由結束
 
 // ************
 // 設定靜態內容資料夾
