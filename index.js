@@ -16,7 +16,14 @@ import bcrypt from "bcrypt";
 import prRouter from "./routes/product.js"
 import pjRouter from "./routes/project.js"
 import bkRouter from "./routes/project.js"
-import rvRouter from "./routes/reservation.js"
+import classRouter from "./routes/class.js";
+import articleRouter from "./routes/article.js";
+import cors from "cors";
+import mysql_session from "express-mysql-session";
+import bcrypt from "bcrypt";
+import prRouter from "./routes/product.js";
+import pjRouter from "./routes/project.js";
+import rvRouter from "./routes/reservation.js";
 import memberRouter from "./routes/b2c_member.js";
 
 // tmp_uploads 暫存的資料夾
@@ -104,8 +111,11 @@ app.get("/json-sales", (req, res) => {
   res.render("json-sales", { sales });
 });
 
+
+app.use("/b2c_member", memberRouter);
+
 app.get("/try-qs", (req, res) => {
-  res.json(req.query); // 查看 query string
+  res.json(req.query);
 });
 
 app.get("/try-post-form", (req, res) => {
@@ -274,7 +284,10 @@ app.post("/login-jwt", async (req, res) => {
     return res.json(output);
   }
 
-  const result = await bcrypt.compare(req.body.password, rows[0].password);
+  const result = await bcrypt.compare(
+    req.body.b2c_password,
+    rows[0].b2c_password
+  );
   if (!result) {
     // 密碼是錯的
     output.code = 420;
@@ -310,20 +323,8 @@ app.get("/jwt1", (req, res) => {
     account: "shin",
   };
 
-  const token = jwt.sign(data, process.env.JWT_KEY);
-  res.send(token);
-});
-app.get("/jwt2", (req, res) => {
-  const token =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcsImFjY291bnQiOiJzaGluIiwiaWF0IjoxNzE5MTkzMTMwfQ.6ta85NzTZAICtcFfyLkkSHsfaxBa8BjDFEd2dCy7CvY";
-
-  let payload = {};
-  try {
-    payload = jwt.verify(token, process.env.JWT_KEY);
-  } catch (ex) {
-    // 如果 token 是無效的
-    payload = { ex };
-  }
+// 商城路由開始
+app.use("/product", prRouter);
 
 // 商城路由結束
 
@@ -334,6 +335,11 @@ app.use("/booking", bkRouter);
 // 這行是連到routes/project.js/reservation.js資料夾裡的東西
 
 // 生命禮儀路由結束
+
+//論壇路由開始
+app.use("/class", classRouter);
+app.use("/article", articleRouter);
+//論壇路由結束
 
 // ************
 // 設定靜態內容資料夾
