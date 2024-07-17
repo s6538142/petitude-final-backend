@@ -9,20 +9,24 @@ import admin2Router from "./routes/admin2.js";
 import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
-import abRouter from "./routes/address-book.js";
+
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
-import prRouter from "./routes/product.js"
-import pjRouter from "./routes/project.js"
-import bkRouter from "./routes/project.js"
+
 import classRouter from "./routes/class.js";
 import articleRouter from "./routes/article.js";
 import cors from "cors";
-import mysql_session from "express-mysql-session";
-import bcrypt from "bcrypt";
+
+
+
+
+
+import bkRouter from "./routes/project.js";
+
 import prRouter from "./routes/product.js";
 import pjRouter from "./routes/project.js";
 import rvRouter from "./routes/reservation.js";
+
 import memberRouter from "./routes/b2c_member.js";
 
 // tmp_uploads 暫存的資料夾
@@ -87,7 +91,7 @@ app.get("/", (req, res) => {
   res.render("home", { name: "Shinder" });
 });
 
-app.use("/address-book", abRouter);
+
 
 app.get("/json-sales", (req, res) => {
   const sales = [
