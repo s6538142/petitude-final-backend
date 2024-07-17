@@ -5,95 +5,107 @@ import jwt from "jsonwebtoken";
 import express from "express";
 import multer from "multer";
 import upload from "./utils/upload-imgs.js";
+import admin2Router from "./routes/admin2.js";
 import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
-import articleRouter from "./routes/article-list.js";
-import classRouter from "./routes/class-list.js";
-import APRouter from "./routes/article-page.js";
+import abRouter from "./routes/address-book.js";
 import cors from "cors";
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
-import prRouter from "./routes/product.js"
-import pjRouter from "./routes/project.js"
-import rvRouter from "./routes/reservation.js"
-import memberRouter from "./routes/b2c_member.js";
 
 // tmp_uploads 暫存的資料夾
-// const upload = multer({ dest: "tmp_uploads/" }); // 初始化 Multer 以將上傳的檔案暫存到 tmp_uploads 資料夾
+// const upload = multer({ dest: "tmp_uploads/" });
 
-const app = express(); // 創建 Express 應用實例
+const app = express();
 
-app.set("view engine", "ejs"); // 設定模板引擎為 EJS
+app.set("view engine", "ejs");
 
-// 只會解析 application/x-www-form-urlencoded 格式的請求
+// 只會解析 application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 
-// 只會解析 application/json 格式的請求
+// 只會解析 application/json
 app.use(express.json());
-
 const corsOptions = {
   credentials: true,
   origin: (origin, cb) => {
     // console.log({ origin });
-    cb(null, true); // 設定 CORS 選項，允許所有來源
+    cb(null, true); // 全部都允許
   },
 };
-app.use(cors(corsOptions)); // 使用 CORS 中介軟體
+app.use(cors(corsOptions));
 
-const MysqlStore = mysql_session(session); // 創建 MySQL session 存儲
-const sessionStore = new MysqlStore({}, db); // 使用資料庫作為 session 存儲
+const MysqlStore = mysql_session(session);
+const sessionStore = new MysqlStore({}, db);
 
 app.use(
   session({
-    saveUninitialized: false, // 不要保存未初始化的 session
-    resave: false, // 只有在修改後才保存 session
-    secret: "dkfgdlkg8496749KHJKHLd", // 用於簽名 session ID 的密鑰
-    store: sessionStore, // 指定 session 存儲
+    saveUninitialized: false,
+    resave: false,
+    secret: "dkfgdlkg8496749KHJKHLd",
+    store: sessionStore,
+    /*
+    cookie: {
+      maxAge: 1800_000
+    }
+    */
   })
 );
 
 // 自訂頂層的 middleware
 app.use((req, res, next) => {
-  res.locals.title = "小新的網站"; 
-  res.locals.session = req.session;
+  res.locals.title = "小新的網站";
+  res.locals.session = req.session; // 讓 template 可以使用 session
 
-  const auth = req.get("Authorization"); 
+  const auth = req.get("Authorization"); // 先拿到檔頭的 Authorization 項目值
   if (auth && auth.indexOf("Bearer ") === 0) {
-    const token = auth.slice(7); // 提取 token
+    const token = auth.slice(7);
 
     try {
-      req.my_jwt = jwt.verify(token, process.env.JWT_KEY); // 驗證 token 並存入 req.my_jwt
+      req.my_jwt = jwt.verify(token, process.env.JWT_KEY);
     } catch (ex) {}
   }
 
-  next(); // 進入下一個 middleware
+  next();
 });
 
 // routes
-// 設定路由，根路由只允許 GET 請求
+// 設定路由, 只允許用 GET 拜訪
 app.get("/", (req, res) => {
-  res.locals.title = "首頁 | " + res.locals.title; // 設定首頁的標題
-  res.render("home", { name: "Shinder" }); // 渲染首頁模板
+  res.locals.title = "首頁 | " + res.locals.title;
+  res.render("home", { name: "Shinder" });
 });
 
+app.use("/address-book", abRouter);
 
-//論壇路由
-app.use("/b2c_member", memberRouter);
-app.use("/article-list", articleRouter);
-app.use("/class-list", classRouter);
-app.use("/article-page", APRouter);
-
-
+app.get("/json-sales", (req, res) => {
+  const sales = [
+    {
+      name: "Bill",
+      age: 28,
+      id: "A001",
+    },
+    {
+      name: "Peter",
+      age: 32,
+      id: "A002",
+    },
+    {
+      name: "Carl",
+      age: 29,
+      id: "A003",
+    },
+  ];
+  res.render("json-sales", { sales });
+});
 
 app.get("/try-qs", (req, res) => {
-  res.json(req.query); 
+  res.json(req.query); // 查看 query string
 });
 
 app.get("/try-post-form", (req, res) => {
-  res.render("try-post-form"); 
+  res.render("try-post-form");
 });
-
 // const urlencodedParser = express.urlencoded({extended: true});
 app.post("/try-post-form", (req, res) => {
   res.render("try-post-form", req.body);
@@ -106,94 +118,127 @@ app.post("/try-post", (req, res) => {
 app.post("/try-upload", upload.single("avatar"), (req, res) => {
   res.json({
     body: req.body,
-    file: req.file, 
+    file: req.file,
   });
 });
-
 app.post("/try-uploads", upload.array("photos"), (req, res) => {
-  res.json(req.files); 
+  res.json(req.files);
 });
 
 // 嚴謹的路徑規則
 app.get("/my-params1/my", (req, res) => {
-  res.json("/my-params1/my"); // 返回指定路徑的 JSON 響應
+  res.json("/my-params1/my");
 });
-
-// 寬鬆的路徑規則
+// 寛鬆的路徑規則
 app.get("/my-params1/:action?/:id?", (req, res) => {
-  res.json(req.params); // 返回路由參數
+  res.json(req.params);
 });
-
 
 app.get("/products/:pid", (req, res) => {
-  res.json(req.params.pid); 
+  res.json(req.params.pid);
 });
 
-// 獲取契約 ID
-app.get("/project/:project_id", (req, res) => {
-  res.json(req.params.project_id); // 返回契約 ID
-});
-
-// 正則表達式路由
 app.get(/^\/m\/09\d{2}-?\d{3}-?\d{3}$/i, (req, res) => {
-  let u = req.url.slice(3); // 獲取路徑參數
-  u = u.split("?")[0]; // 移除查詢字串
-  u = u.split("-").join(""); // 移除 '-' 字符
-  res.json({ u }); // 返回處理後的路徑參數
+  let u = req.url.slice(3);
+  u = u.split("?")[0];
+  u = u.split("-").join("");
+  res.json({ u });
 });
-
-
+app.use("/admin2", admin2Router);
 
 app.get("/try-sess", (req, res) => {
   // 要有 session 的 middleware 才有 req.session
-  req.session.myNum ||= 0; // 如果為 falsy，則設定為 0
-  req.session.myNum++; // 增加計數
-  res.json(req.session); // 返回 session 數據
+
+  // req.session.myNum = req.session.myNum || 1;
+  req.session.myNum ||= 0; // 如果 falsy 就設定為 0
+  req.session.myNum++;
+  res.json(req.session);
 });
 
 app.get("/try-moment", (req, res) => {
-  const fm = "YYYY-MM-DD HH:mm:ss"; // 設定日期格式
-  const m1 = moment(); // 獲取當前時間的 moment 物件
-  const m2 = moment(new Date()); // 獲取當前時間的 moment 物件
-  const m3 = moment("2023-10-25"); // 創建指定日期的 moment 物件
+  const fm = "YYYY-MM-DD HH:mm:ss";
+  const m1 = moment(); // 當下時間的 moment 物件
+  const m2 = moment(new Date()); // 當下時間的 moment 物件
+  const m3 = moment("2023-10-25");
 
   res.json({
-    m1a: m1.format(fm), // 返回格式化的當前時間
-    m1b: m1.tz("Europe/London").format(fm), // 返回倫敦時區的當前時間
-    m2a: m2.format(fm), // 返回格式化的當前時間
-    m2b: m2.tz("Europe/London").format(fm), // 返回倫敦時區的當前時間
-    m3a: m3.format(fm), // 返回格式化的指定日期
-    m3b: m3.tz("Europe/London").format(fm), // 返回倫敦時區的指定日期
+    m1a: m1.format(fm),
+    m1b: m1.tz("Europe/London").format(fm),
+    m2a: m2.format(fm),
+    m2b: m2.tz("Europe/London").format(fm),
+    m3a: m3.format(fm),
+    m3b: m3.tz("Europe/London").format(fm),
   });
 });
-
 app.get("/try-moment2", (req, res) => {
-  const fm = "YYYY-MM-DD HH:mm:ss"; // 設定日期格式
-  const m1 = moment("2024-02-29"); // 創建指定日期的 moment 物件
-  const m2 = moment("2024-05-35"); // 創建不合法的日期
-  const m3 = moment("2023-02-29"); // 創建不合法的日期
+  const fm = "YYYY-MM-DD HH:mm:ss";
+  const m1 = moment("2024-02-29");
+  const m2 = moment("2024-05-35");
+  const m3 = moment("2023-02-29");
 
   res.json([
-    m1.format(fm), // 返回格式化的日期
-    m1.isValid(), // 檢查日期是否有效
-    m2.format(fm), // 返回不合法日期的格式化結果
-    m2.isValid(), // 檢查不合法日期是否有效
-    m3.format(fm), // 返回不合法日期的格式化結果
-    m3.isValid(), // 檢查不合法日期是否有效
+    m1.format(fm),
+    m1.isValid(),
+    m2.format(fm),
+    m2.isValid(),
+    m3.format(fm),
+    m3.isValid(),
   ]);
 });
 
 app.get("/try-db", async (req, res) => {
-  const sql = "SELECT * FROM address_book LIMIT 3"; 
+  const sql = "SELECT * FROM address_book LIMIT 3";
 
-  const [results, fields] = await db.query(sql); 
-  res.json({ results, fields }); 
+  const [results, fields] = await db.query(sql);
+  res.json({ results, fields });
 });
 
+app.get("/yahoo", async (req, res) => {
+  const r = await fetch("https://tw.yahoo.com/");
+  const txt = await r.text();
+  res.send(txt);
+});
+
+app.get("/login", async (req, res) => {
+  res.render("login");
+});
+app.post("/login", upload.none(), async (req, res) => {
+  const output = {
+    success: false,
+    code: 0,
+    body: req.body,
+  };
+
+  const sql = "SELECT * FROM members WHERE email=?";
+  const [rows] = await db.query(sql, [req.body.email]);
+
+  if (!rows.length) {
+    // 帳號是錯的
+    output.code = 400;
+    return res.json(output);
+  }
+
+  const result = await bcrypt.compare(req.body.password, rows[0].password);
+  if (!result) {
+    // 密碼是錯的
+    output.code = 420;
+    return res.json(output);
+  }
+  output.success = true;
+
+  // 把狀態記錄在 session 裡
+  req.session.admin = {
+    id: rows[0].id,
+    email: rows[0].email,
+    nickname: rows[0].nickname,
+  };
+
+  res.json(output);
+});
 
 app.get("/logout", (req, res) => {
-  delete req.session.admin; // 刪除 session 中的 admin 資訊
-  res.redirect("/"); // 重新導向至首頁
+  delete req.session.admin;
+  res.redirect("/");
 });
 
 app.post("/login-jwt", async (req, res) => {
@@ -202,15 +247,15 @@ app.post("/login-jwt", async (req, res) => {
     code: 0,
     body: req.body,
     data: {
-      b2c_id: 0,
-      b2c_email: "",
-      b2c_name: "",
+      sid: 0,
+      email: "",
+      nickname: "",
       token: "",
     },
   };
 
-  const sql = "SELECT * FROM b2c_members WHERE b2c_email=?";
-  const [rows] = await db.query(sql, [req.body.b2c_email]);
+  const sql = "SELECT * FROM members WHERE email=?";
+  const [rows] = await db.query(sql, [req.body.email]);
 
   if (!rows.length) {
     // 帳號是錯的
@@ -218,7 +263,7 @@ app.post("/login-jwt", async (req, res) => {
     return res.json(output);
   }
 
-  const result = await bcrypt.compare(req.body.b2c_password, rows[0].b2c_password);
+  const result = await bcrypt.compare(req.body.password, rows[0].password);
   if (!result) {
     // 密碼是錯的
     output.code = 420;
@@ -228,16 +273,16 @@ app.post("/login-jwt", async (req, res) => {
 
   // 沒有要記錄登入狀態, 打包 JWT
   const payload = {
-    b2c_id: rows[0].b2c_id,
-    b2c_email: rows[0].b2c_email,
+    id: rows[0].id,
+    email: rows[0].email,
   };
 
   const token = jwt.sign(payload, process.env.JWT_KEY);
 
   output.data = {
-    b2c_id: rows[0].b2c_id,
-    b2c_email: rows[0].b2c_email,
-    b2c_name: rows[0].b2c_name,
+    id: rows[0].id,
+    email: rows[0].email,
+    nickname: rows[0].nickname,
     token,
     // role: "admin"
   };
@@ -245,35 +290,45 @@ app.post("/login-jwt", async (req, res) => {
   res.json(output);
 });
 
-
-
 app.get("/jwt-data", (req, res) => {
   res.json(req.my_jwt);
 });
+app.get("/jwt1", (req, res) => {
+  const data = {
+    id: 17,
+    account: "shin",
+  };
 
+  const token = jwt.sign(data, process.env.JWT_KEY);
+  res.send(token);
+});
+app.get("/jwt2", (req, res) => {
+  const token =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MTcsImFjY291bnQiOiJzaGluIiwiaWF0IjoxNzE5MTkzMTMwfQ.6ta85NzTZAICtcFfyLkkSHsfaxBa8BjDFEd2dCy7CvY";
 
-// 商城路由開始
-app.use("/product", prRouter); 
+  let payload = {};
+  try {
+    payload = jwt.verify(token, process.env.JWT_KEY);
+  } catch (ex) {
+    // 如果 token 是無效的
+    payload = { ex };
+  }
 
-// 商城路由結束
-
-// 生命禮儀路由開始
-app.use("/project", pjRouter); 
-
-// 生命禮儀路由結束
+  res.send(payload);
+});
 
 // ************
 // 設定靜態內容資料夾
-app.use(express.static("public")); // 設定 public 為靜態資源資料夾
-app.use("/bootstrap", express.static("node_modules/bootstrap/dist")); // 設定 Bootstrap 靜態資源路徑
+app.use(express.static("public"));
+app.use("/bootstrap", express.static("node_modules/bootstrap/dist"));
 
-// ************ 404 處理要放在所有的路由設定之後
+// ************ 404 要放在所有的路由設定之後
 // use 接受所有 HTTP 方法
 app.use((req, res) => {
-  res.type("text/plain").status(404).send("走錯路了"); 
+  res.type("text/plain").status(404).send("走錯路了");
 });
 
-const port = process.env.WEB_PORT || 3002; 
+const port = process.env.WEB_PORT || 3002;
 app.listen(port, () => {
   console.log(`Server start: port ${port}`);
 });
