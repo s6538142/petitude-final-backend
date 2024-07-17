@@ -16,7 +16,7 @@ import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
 import prRouter from "./routes/product.js"
 import pjRouter from "./routes/project.js"
-import bkRouter from "./routes/project.js"
+import bkRouter from "./routes/booking.js"
 import rvRouter from "./routes/reservation.js"
 import memberRouter from "./routes/b2c_member.js";
 
