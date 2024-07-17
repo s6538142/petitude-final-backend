@@ -1,14 +1,49 @@
 import express from "express";
 import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
+import multer from "multer";
 
-const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
+const dateFormat = "YYYY-MM-DD";
 
-// fetch article and messages
+// 設置 multer
+const upload = multer();
+
+router.post("/add", upload.none(), async (req, res) => {
+  try {
+    const { article_name, article_content, article_topic } = req.body;
+    console.log("Received data:", {
+      article_name,
+      article_content,
+      article_topic,
+    }); // 日誌輸出接收到的數據
+
+    const article_date = moment().format(dateFormat);
+
+    if (!article_name || !article_content || !article_topic) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing required fields" });
+    }
+
+    const sql = `
+      INSERT INTO article (article_date, article_name, article_content, fk_class_id)
+      VALUES (?, ?, ?, ?)
+    `;
+    const values = [article_date, article_name, article_content, article_topic];
+
+    await db.query(sql, values);
+
+    res.json({ success: true, message: "Article added successfully" });
+  } catch (error) {
+    console.error("Error adding article:", error);
+    res.status(500).json({ success: false, error: "Failed to add article" });
+  }
+});
+
+// 獲取文章和留言的功能
 const getArticleAndMessages = async (article_id) => {
   try {
-    // Fetch article
     const articleSql = `
       SELECT a.*, c.class_name
       FROM article a
@@ -19,7 +54,6 @@ const getArticleAndMessages = async (article_id) => {
       throw new Error("Article not found");
     }
 
-    // Fetch messages
     const messageSql = `
       SELECT m.*, b.b2c_name
       FROM message m
@@ -28,7 +62,6 @@ const getArticleAndMessages = async (article_id) => {
       ORDER BY m.message_date DESC`;
     const [messageRows] = await db.query(messageSql, [article_id]);
 
-    // 格式化文章日期
     articleRows[0].article_date = moment(articleRows[0].article_date).isValid()
       ? moment(articleRows[0].article_date).format(dateFormat)
       : "";
@@ -44,8 +77,8 @@ const getListData = async (req) => {
   let success = false;
   let redirect = "";
 
-  const perPage = 25; // 每頁最多有幾筆資料
-  let page = parseInt(req.query.page) || 1; // 從 query string 取得 page 的值
+  const perPage = 25;
+  let page = parseInt(req.query.page) || 1;
   if (page < 1) {
     redirect = "?page=1";
     return { success, redirect };
@@ -60,15 +93,14 @@ const getListData = async (req) => {
 
   const t_sql = `SELECT COUNT(1) totalRows FROM article a ${where}`;
   const [[{ totalRows }]] = await db.query(t_sql);
-  let totalPages = 0; // 總頁數, 預設值
-  let rows = []; // 分頁資料
+  let totalPages = 0;
+  let rows = [];
   if (totalRows) {
     totalPages = Math.ceil(totalRows / perPage);
     if (page > totalPages) {
       redirect = `?page=${totalPages}`;
       return { success, redirect };
     }
-    // 取得分頁資料
     const sql = `
       SELECT a.*, c.class_name
       FROM article a
@@ -94,7 +126,6 @@ const getListData = async (req) => {
   };
 };
 
-// 文章列表頁面
 router.get("/", async (req, res) => {
   res.locals.title = "文章列表 | " + res.locals.title;
   res.locals.pageName = "article_list";
@@ -107,13 +138,11 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 取得文章列表的 API
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
   res.json(data);
 });
 
-// 取得單篇文章的 API
 router.get("/api/:article_id", async (req, res) => {
   const article_id = +req.params.article_id || 0;
   if (!article_id) {
