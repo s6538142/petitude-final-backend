@@ -1,7 +1,7 @@
 import express from "express";
 import moment from "moment-timezone";
-import db from "./../utils/connect-mysql.js";
-import upload from "./../utils/upload-imgs.js";
+import db from "../utils/connect-mysql.js";
+import upload from "../utils/upload-imgs.js";
 
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
@@ -26,22 +26,22 @@ const getListData = async (req) => {
     // where += ` AND \`name\` LIKE '%${keyword}%' `; // 沒有處理 SQL injection
     const keyword_ = db.escape(`%${keyword}%`);
     // console.log(keyword_);
-    where += ` AND ( \`name\` LIKE ${keyword_} OR \`mobile\` LIKE ${keyword_} ) `; // 處理 SQL injection
+    where += ` AND ( \`b2c_name\` LIKE ${keyword_} OR \`b2c_mobile\` LIKE ${keyword_} ) `; // 處理 SQL injection
   }
   if (birth_begin) {
     const m = moment(birth_begin);
     if (m.isValid()) {
-      where += ` AND birthday >= '${m.format(dateFormat)}' `;
+      where += ` AND b2c_birthday >= '${m.format(dateFormat)}' `;
     }
   }
   if (birth_end) {
     const m = moment(birth_end);
     if (m.isValid()) {
-      where += ` AND birthday <= '${m.format(dateFormat)}' `;
+      where += ` AND b2c_birthday <= '${m.format(dateFormat)}' `;
     }
   }
 
-  const t_sql = `SELECT COUNT(1) totalRows FROM address_book ${where}`;
+  const t_sql = `SELECT COUNT(1) totalRows FROM b2c_members ${where}`;
   console.log(t_sql);
   const [[{ totalRows }]] = await db.query(t_sql);
   let totalPages = 0; // 總頁數, 預設值
@@ -53,7 +53,7 @@ const getListData = async (req) => {
       return { success, redirect };
     }
     // 取得分頁資料
-    const sql = `SELECT * FROM \`address_book\` ${where} ORDER BY sid DESC LIMIT ${
+    const sql = `SELECT * FROM \`b2c_members\` ${where} ORDER BY b2c_id DESC LIMIT ${
       (page - 1) * perPage
     },${perPage}`;
     console.log(sql);
@@ -101,17 +101,17 @@ router.use((req, res, next) => {
   }
 });
 */
-router.get("/", async (req, res) => {
-  res.locals.title = "通訊錄列表 | " + res.locals.title;
-  res.locals.pageName = "ab_list";
-  const data = await getListData(req);
-  if (data.redirect) {
-    return res.redirect(data.redirect);
-  }
-  if (data.success) {
-    res.render("address-book/list", data);
-  }
-});
+// router.get("/", async (req, res) => {
+//   res.locals.title = "通訊錄列表 | " + res.locals.title;
+//   res.locals.pageName = "b2c_list";
+//   const data = await getListData(req);
+//   if (data.redirect) {
+//     return res.redirect(data.redirect);
+//   }
+//   if (data.success) {
+//     res.render("address-book/list", data);
+//   }
+// });
 
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
@@ -120,7 +120,7 @@ router.get("/api", async (req, res) => {
 
 router.get("/add", async (req, res) => {
   res.locals.title = "新增通訊錄 | " + res.locals.title;
-  res.locals.pageName = "ab_add";
+  res.locals.pageName = "b2c_add";
   res.render("address-book/add");
 });
 /*
@@ -150,7 +150,7 @@ router.post("/add", async (req, res) => {
   const m = moment(body.birthday);
   body.birthday = m.isValid() ? m.format(dateFormat) : null;
 
-  const sql = "INSERT INTO address_book SET ?";
+  const sql = "INSERT INTO b2c_members SET ?";
   const [result] = await db.query(sql, [body]);
 
   res.json({
@@ -171,7 +171,7 @@ router.post("/add", async (req, res) => {
 });
 
 // 刪除資料的 API
-router.delete("/api/:sid", async (req, res) => {
+router.delete("/api/:b2c_id", async (req, res) => {
   const output = {
     success: false,
     code: 0,
@@ -183,13 +183,13 @@ router.delete("/api/:sid", async (req, res) => {
     output.code = 470;
     return res.json(output);
   }
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
     output.code = 480;
     return res.json(output);
   }
 
-  const sql = `DELETE FROM address_book WHERE sid=${sid}`;
+  const sql = `DELETE FROM b2c_members WHERE b2c_id=${b2c_id}`;
   const [result] = await db.query(sql);
   output.result = result;
   output.success = !!result.affectedRows;
@@ -198,13 +198,13 @@ router.delete("/api/:sid", async (req, res) => {
 });
 
 // 編輯的表單頁
-router.get("/edit/:sid", async (req, res) => {
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+router.get("/edit/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
     return res.redirect("/address-book");
   }
 
-  const sql = `SELECT * FROM address_book WHERE sid=${sid}`;
+  const sql = `SELECT * FROM b2c_members WHERE b2c_id=${b2c_id}`;
   const [rows] = await db.query(sql);
   if (!rows.length) {
     // 沒有該筆資料
@@ -219,13 +219,13 @@ router.get("/edit/:sid", async (req, res) => {
 });
 
 // 取得單項資料的 API
-router.get("/api/:sid", async (req, res) => {
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+router.get("/api/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
     return res.json({ success: false, error: "沒有編號" });
   }
 
-  const sql = `SELECT * FROM address_book WHERE sid=${sid}`;
+  const sql = `SELECT * FROM b2c_members WHERE b2c_id=${b2c_id}`;
   const [rows] = await db.query(sql);
   if (!rows.length) {
     // 沒有該筆資料
@@ -239,15 +239,15 @@ router.get("/api/:sid", async (req, res) => {
 });
 
 // 處理編輯的表單
-router.put("/api/:sid", upload.none(), async (req, res) => {
+router.put("/api/:b2c_id", upload.none(), async (req, res) => {
   const output = {
     success: false,
     code: 0,
     result: {},
   };
 
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
     return res.json(output);
   }
 
@@ -256,9 +256,9 @@ router.put("/api/:sid", upload.none(), async (req, res) => {
   body.birthday = m.isValid() ? m.format(dateFormat) : null;
 
   try {
-    const sql = "UPDATE `address_book` SET ? WHERE sid=? ";
+    const sql = "UPDATE `b2c_members` SET ? WHERE b2c_id=? ";
 
-    const [result] = await db.query(sql, [body, sid]);
+    const [result] = await db.query(sql, [body, b2c_id]);
     output.result = result;
     output.success = !!(result.affectedRows && result.changedRows);
   } catch (ex) {
