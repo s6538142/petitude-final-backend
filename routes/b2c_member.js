@@ -87,7 +87,19 @@ router.post("/add", async (req, res) => {
   let body = { ...req.body };
 
   try {
-    // 加密密碼
+    // 检查信箱是否已存在
+    const [emailRows] = await db.query("SELECT 1 FROM b2c_members WHERE b2c_email = ?", [body.b2c_email]);
+    if (emailRows.length > 0) {
+      return res.status(400).json({ success: false, error: "信箱已被使用" });
+    }
+
+    // 检查手機是否已存在
+    const [mobileRows] = await db.query("SELECT 1 FROM b2c_members WHERE b2c_mobile = ?", [body.b2c_mobile]);
+    if (mobileRows.length > 0) {
+      return res.status(400).json({ success: false, error: "手機號碼已被使用" });
+    }
+
+    // 加密密码
     const saltRounds = 8;
     body.b2c_password = await bcrypt.hash(body.b2c_password, saltRounds);
 
@@ -100,50 +112,8 @@ router.post("/add", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, error: "Server error" });
+    res.status(500).json({ success: false, error: "服务器错误" });
   }
-});
-
-router.delete("/api/:b2c_id", async (req, res) => {
-  const output = {
-    success: false,
-    code: 0,
-    result: {},
-  };
-
-  if (!req.my_jwt?.id) {
-    output.code = 470;
-    return res.json(output);
-  }
-  const b2c_id = +req.params.b2c_id || 0;
-  if (!b2c_id) {
-    output.code = 480;
-    return res.json(output);
-  }
-
-  const sql = `DELETE FROM b2c_members WHERE b2c_id=${b2c_id}`;
-  const [result] = await db.query(sql);
-  output.result = result;
-  output.success = !!result.affectedRows;
-
-  res.json(output);
-});
-
-router.get("/edit/:b2c_id", async (req, res) => {
-  const b2c_id = +req.params.b2c_id || 0;
-  if (!b2c_id) {
-    return res.redirect("/address-book");
-  }
-
-  const sql = `SELECT * FROM b2c_members WHERE b2c_id=${b2c_id}`;
-  const [rows] = await db.query(sql);
-  if (!rows.length) {
-    return res.redirect("/address-book");
-  }
-
-  rows[0].b2c_birthday = moment(rows[0].b2c_birthday).format(dateFormat);
-
-  res.render("address-book/edit", rows[0]);
 });
 
 // 更新 GET 請求處理函數
