@@ -10,7 +10,6 @@ import session from "express-session";
 import moment from "moment-timezone";
 import db from "./utils/connect-mysql.js";
 import abRouter from "./routes/address-book.js";
-import cors from "cors";
 import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
 import prRouter from "./routes/product.js"
