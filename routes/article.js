@@ -6,49 +6,69 @@ import multer from "multer";
 const router = express.Router();
 const dateFormat = "YYYY-MM-DD";
 
-// 設置 multer
-const upload = multer();
+// 设置 multer 存储位置和文件命名方式
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+const upload = multer({ storage });
 
-router.post("/add", upload.none(), async (req, res) => {
+router.post("/add", upload.single("article_img"), async (req, res) => {
   try {
-    const { article_name, article_content, article_topic } = req.body;
+    const { article_name, article_content, fk_class_id } = req.body;
+    const article_img = req.file ? req.file.filename : null;
     console.log("Received data:", {
       article_name,
       article_content,
-      article_topic,
-    }); // 日誌輸出接收到的數據
+      fk_class_id,
+      article_img,
+    }); // 记录接收到的数据
 
     const article_date = moment().format(dateFormat);
 
-    if (!article_name || !article_content || !article_topic) {
+    if (!article_name || !article_content || !fk_class_id) {
       return res
         .status(400)
         .json({ success: false, error: "Missing required fields" });
     }
 
     const sql = `
-      INSERT INTO article (article_date, article_name, article_content, fk_class_id)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO article (article_date, article_name, article_content, fk_class_id, article_img)
+      VALUES (?, ?, ?, ?, ?)
     `;
-    const values = [article_date, article_name, article_content, article_topic];
+    const values = [
+      article_date,
+      article_name,
+      article_content,
+      fk_class_id,
+      article_img,
+    ];
+
+    console.log("Executing SQL:", sql);
+    console.log("With values:", values);
 
     await db.query(sql, values);
 
     res.json({ success: true, message: "Article added successfully" });
   } catch (error) {
-    console.error("Error adding article:", error);
+    console.error("Error adding article:", error); // 记录详细错误信息
     res.status(500).json({ success: false, error: "Failed to add article" });
   }
 });
 
-// 獲取文章和留言的功能
+// 获取文章和留言的功能
 const getArticleAndMessages = async (article_id) => {
   try {
     const articleSql = `
       SELECT a.*, c.class_name
       FROM article a
       JOIN class c ON a.fk_class_id = c.class_id
-      WHERE a.article_id = ?`;
+      WHERE a.article_id = ?
+    `;
     const [articleRows] = await db.query(articleSql, [article_id]);
     if (!articleRows.length) {
       throw new Error("Article not found");
@@ -59,7 +79,8 @@ const getArticleAndMessages = async (article_id) => {
       FROM message m
       JOIN b2c_members b ON m.fk_b2c_id = b.b2c_id
       WHERE m.fk_article_id = ?
-      ORDER BY m.message_date DESC`;
+      ORDER BY m.message_date DESC
+    `;
     const [messageRows] = await db.query(messageSql, [article_id]);
 
     articleRows[0].article_date = moment(articleRows[0].article_date).isValid()
@@ -107,7 +128,8 @@ const getListData = async (req) => {
       JOIN class c ON a.fk_class_id = c.class_id
       ${where}
       ORDER BY a.article_id DESC
-      LIMIT ${(page - 1) * perPage},${perPage}`;
+      LIMIT ${(page - 1) * perPage},${perPage}
+    `;
     [rows] = await db.query(sql);
     rows.forEach((el) => {
       const m = moment(el.article_date);
