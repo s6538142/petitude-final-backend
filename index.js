@@ -15,6 +15,7 @@ import articleRouter from "./routes/article.js";
 import cors from "cors";
 import bkRouter from "./routes/project.js";
 import prRouter from "./routes/product.js";
+import paymentRouter from "./routes/ecpay.js"
 import pjRouter from "./routes/project.js";
 import rvRouter from "./routes/reservation.js";
 import memberRouter from "./routes/b2c_member.js";
@@ -264,6 +265,7 @@ app.get("/jwt-data", (req, res) => {
 
 // 商城路由開始
 app.use("/product", prRouter);
+app.use("/ecpay", paymentRouter);
 
 // 商城路由結束
 
