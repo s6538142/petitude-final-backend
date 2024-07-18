@@ -60,6 +60,8 @@ const getListData = async (req) => {
       return { success, redirect };
     }
 
+   
+
     // 取得分頁資料
     const sql = `SELECT * FROM \`reservation\` ${where} ORDER BY reservation_id DESC LIMIT ${
       (page - 1) * perPage
@@ -130,7 +132,9 @@ router.post("/add", async (req, res) => {
     result,
     success: !!result.affectedRows,
   });
+  
 });
+ 
 
 // 刪除資料的api, 要到postman測試看看能不能刪除
 // router.delete("/api/:reservation_id", async (req, res) => {
