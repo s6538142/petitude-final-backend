@@ -16,7 +16,6 @@ import cors from "cors";
 import bkRouter from "./routes/booking.js";
 import prRouter from "./routes/product.js";
 import pjRouter from "./routes/project.js";
-import bkRouter from "./routes/project.js"
 import rvRouter from "./routes/reservation.js";
 import memberRouter from "./routes/b2c_member.js";
 
