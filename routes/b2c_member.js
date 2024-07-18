@@ -29,18 +29,7 @@ const getListData = async (req) => {
     const keyword_ = db.escape(`%${keyword}%`);
     where += ` AND ( \`b2c_name\` LIKE ${keyword_} OR \`b2c_mobile\` LIKE ${keyword_} ) `;
   }
-  if (birth_begin) {
-    const m = moment(birth_begin);
-    if (m.isValid()) {
-      where += ` AND b2c_birthday >= '${m.format(dateFormat)}' `;
-    }
-  }
-  if (birth_end) {
-    const m = moment(birth_end);
-    if (m.isValid()) {
-      where += ` AND b2c_birthday <= '${m.format(dateFormat)}' `;
-    }
-  }
+
 
   const t_sql = `SELECT COUNT(1) totalRows FROM b2c_members ${where}`;
   console.log(t_sql);
@@ -59,10 +48,7 @@ const getListData = async (req) => {
     },${perPage}`;
     console.log(sql);
     [rows] = await db.query(sql);
-    rows.forEach((el) => {
-      const m = moment(el.b2c_birthday);
-      el.b2c_birthday = m.isValid() ? m.format(dateFormat) : "";
-    });
+
   }
   success = true;
   return {
@@ -130,7 +116,6 @@ router.get("/api/:b2c_id", async (req, res) => {
   }
 
   const row = rows[0];
-  row.b2c_birthday = formatDate(row.b2c_birthday); // 格式化日期
 
   res.json({ success: true, data: row });
 });
