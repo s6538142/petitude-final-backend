@@ -1,7 +1,7 @@
 import express from "express";
 import moment from "moment-timezone";
-import db from "./../utils/connect-mysql.js";
-import upload from "./../utils/upload-imgs.js";
+import db from "../utils/connect-mysql.js";
+import upload from "../utils/upload-imgs.js";
 
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
@@ -41,7 +41,7 @@ const getListData = async (req) => {
     }
   }
 
-  const t_sql = `SELECT COUNT(1) totalRows FROM address_book ${where}`;
+  const t_sql = `SELECT COUNT(1) totalRows FROM class ${where}`;
   console.log(t_sql);
   const [[{ totalRows }]] = await db.query(t_sql);
   let totalPages = 0; // 總頁數, 預設值
@@ -53,7 +53,7 @@ const getListData = async (req) => {
       return { success, redirect };
     }
     // 取得分頁資料
-    const sql = `SELECT * FROM \`address_book\` ${where} ORDER BY sid DESC LIMIT ${
+    const sql = `SELECT * FROM \`class\` ${where} ORDER BY class_id DESC LIMIT ${
       (page - 1) * perPage
     },${perPage}`;
     console.log(sql);
@@ -134,7 +134,7 @@ router.post("/add", async (req, res) => {
   // TODO: 欄位資料的檢查
 
   /*
-  const sql = "INSERT INTO address_book (`name`, `email`, `mobile`, `birthday`, `address`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())";
+  const sql = "INSERT INTO class (`name`, `email`, `mobile`, `birthday`, `address`, `created_at`) VALUES (?, ?, ?, ?, ?, NOW())";
   const [ result ] = await db.query(sql, [
     req.body.name,
     req.body.email,
@@ -150,7 +150,7 @@ router.post("/add", async (req, res) => {
   const m = moment(body.birthday);
   body.birthday = m.isValid() ? m.format(dateFormat) : null;
 
-  const sql = "INSERT INTO address_book SET ?";
+  const sql = "INSERT INTO class SET ?";
   const [result] = await db.query(sql, [body]);
 
   res.json({
@@ -171,25 +171,25 @@ router.post("/add", async (req, res) => {
 });
 
 // 刪除資料的 API
-router.delete("/api/:sid", async (req, res) => {
+router.delete("/api/:class_id", async (req, res) => {
   const output = {
     success: false,
     code: 0,
     result: {},
   };
 
-  if(! req.my_jwt?.id){
+  if (!req.my_jwt?.id) {
     // 沒有登入
     output.code = 470;
     return res.json(output);
   }
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+  const class_id = +req.params.class_id || 0;
+  if (!class_id) {
     output.code = 480;
     return res.json(output);
   }
 
-  const sql = `DELETE FROM address_book WHERE sid=${sid}`;
+  const sql = `DELETE FROM class WHERE class_id=${class_id}`;
   const [result] = await db.query(sql);
   output.result = result;
   output.success = !!result.affectedRows;
@@ -198,13 +198,13 @@ router.delete("/api/:sid", async (req, res) => {
 });
 
 // 編輯的表單頁
-router.get("/edit/:sid", async (req, res) => {
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+router.get("/edit/:class_id", async (req, res) => {
+  const class_id = +req.params.class_id || 0;
+  if (!class_id) {
     return res.redirect("/address-book");
   }
 
-  const sql = `SELECT * FROM address_book WHERE sid=${sid}`;
+  const sql = `SELECT * FROM class WHERE class_id=${class_id}`;
   const [rows] = await db.query(sql);
   if (!rows.length) {
     // 沒有該筆資料
@@ -219,13 +219,13 @@ router.get("/edit/:sid", async (req, res) => {
 });
 
 // 取得單項資料的 API
-router.get("/api/:sid", async (req, res) => {
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+router.get("/api/:class_id", async (req, res) => {
+  const class_id = +req.params.class_id || 0;
+  if (!class_id) {
     return res.json({ success: false, error: "沒有編號" });
   }
 
-  const sql = `SELECT * FROM address_book WHERE sid=${sid}`;
+  const sql = `SELECT * FROM class WHERE class_id=${class_id}`;
   const [rows] = await db.query(sql);
   if (!rows.length) {
     // 沒有該筆資料
@@ -239,15 +239,15 @@ router.get("/api/:sid", async (req, res) => {
 });
 
 // 處理編輯的表單
-router.put("/api/:sid", upload.none(), async (req, res) => {
+router.put("/api/:class_id", upload.none(), async (req, res) => {
   const output = {
     success: false,
     code: 0,
     result: {},
   };
 
-  const sid = +req.params.sid || 0;
-  if (!sid) {
+  const class_id = +req.params.class_id || 0;
+  if (!class_id) {
     return res.json(output);
   }
 
@@ -256,9 +256,9 @@ router.put("/api/:sid", upload.none(), async (req, res) => {
   body.birthday = m.isValid() ? m.format(dateFormat) : null;
 
   try {
-    const sql = "UPDATE `address_book` SET ? WHERE sid=? ";
+    const sql = "UPDATE `class` SET ? WHERE class_id=? ";
 
-    const [result] = await db.query(sql, [body, sid]);
+    const [result] = await db.query(sql, [body, class_id]);
     output.result = result;
     output.success = !!(result.affectedRows && result.changedRows);
   } catch (ex) {

@@ -15,36 +15,38 @@ const getListData = async (req) => {
     const t_sql = `SELECT COUNT(1) totalRows FROM booking`;
     const [[{ totalRows }]] = await db.query(t_sql);
 
-      // 取得分頁資料
-      const sql = `SELECT * FROM booking`;
-      [rows] = await db.query(sql);
-    
+    // 取得分頁資料
+    const sql = `SELECT * FROM booking`;
+    [rows] = await db.query(sql);
+
     success = true;
 
     return {
-      success, totalRows, rows,
+      success,
+      totalRows,
+      rows,
     };
   } catch (error) {
-    console.error('Error in getListData:', error);
+    console.error("Error in getListData:", error);
     return { success: false, error: "Database error" };
   }
 };
-router.get("/", async(req, res) => {
+router.get("/", async (req, res) => {
   try {
     res.locals.title = "訂單列表" + res.locals.title;
     res.locals.pageName = "index";
     const data = await getListData(req);
-    if(data.redirect){
+    if (data.redirect) {
       return res.redirect(data.redirect);
     }
     res.json(data);
   } catch (error) {
-    console.error('Error in root route:', error);
+    console.error("Error in root route:", error);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
-router.get("/api/:booking_id", async(req, res) => {
+router.get("/api/:booking_id", async (req, res) => {
   try {
     const booking_id = +req.params.booking_id || 0;
     if (!booking_id) {
@@ -53,14 +55,14 @@ router.get("/api/:booking_id", async(req, res) => {
 
     const sql = `SELECT * FROM booking WHERE booking_id=?`;
     const [rows] = await db.query(sql, [booking_id]);
-    
+
     if (!rows.length) {
       return res.status(404).json({ success: false, error: "沒有該筆資料" });
     }
 
     res.json({ success: true, data: rows[0] });
   } catch (error) {
-    console.error('Error in single booking route:', error);
+    console.error("Error in single booking route:", error);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
