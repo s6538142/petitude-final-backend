@@ -3,6 +3,8 @@ import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
 import upload from "../utils/upload-imgs.js";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { sendResetPasswordEmail } from '../utils/send-email.js';
 
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
@@ -29,18 +31,7 @@ const getListData = async (req) => {
     const keyword_ = db.escape(`%${keyword}%`);
     where += ` AND ( \`b2c_name\` LIKE ${keyword_} OR \`b2c_mobile\` LIKE ${keyword_} ) `;
   }
-  if (birth_begin) {
-    const m = moment(birth_begin);
-    if (m.isValid()) {
-      where += ` AND b2c_birthday >= '${m.format(dateFormat)}' `;
-    }
-  }
-  if (birth_end) {
-    const m = moment(birth_end);
-    if (m.isValid()) {
-      where += ` AND b2c_birthday <= '${m.format(dateFormat)}' `;
-    }
-  }
+
 
   const t_sql = `SELECT COUNT(1) totalRows FROM b2c_members ${where}`;
   console.log(t_sql);
@@ -59,10 +50,7 @@ const getListData = async (req) => {
     },${perPage}`;
     console.log(sql);
     [rows] = await db.query(sql);
-    rows.forEach((el) => {
-      const m = moment(el.b2c_birthday);
-      el.b2c_birthday = m.isValid() ? m.format(dateFormat) : "";
-    });
+
   }
   success = true;
   return {
@@ -87,7 +75,19 @@ router.post("/add", async (req, res) => {
   let body = { ...req.body };
 
   try {
-    // 加密密碼
+    // 检查信箱是否已存在
+    const [emailRows] = await db.query("SELECT 1 FROM b2c_members WHERE b2c_email = ?", [body.b2c_email]);
+    if (emailRows.length > 0) {
+      return res.status(400).json({ success: false, error: "信箱已被使用" });
+    }
+
+    // 检查手機是否已存在
+    const [mobileRows] = await db.query("SELECT 1 FROM b2c_members WHERE b2c_mobile = ?", [body.b2c_mobile]);
+    if (mobileRows.length > 0) {
+      return res.status(400).json({ success: false, error: "手機號碼已被使用" });
+    }
+
+    // 加密密码
     const saltRounds = 8;
     body.b2c_password = await bcrypt.hash(body.b2c_password, saltRounds);
 
@@ -100,50 +100,8 @@ router.post("/add", async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, error: "Server error" });
+    res.status(500).json({ success: false, error: "服务器错误" });
   }
-});
-
-router.delete("/api/:b2c_id", async (req, res) => {
-  const output = {
-    success: false,
-    code: 0,
-    result: {},
-  };
-
-  if (!req.my_jwt?.id) {
-    output.code = 470;
-    return res.json(output);
-  }
-  const b2c_id = +req.params.b2c_id || 0;
-  if (!b2c_id) {
-    output.code = 480;
-    return res.json(output);
-  }
-
-  const sql = `DELETE FROM b2c_members WHERE b2c_id=${b2c_id}`;
-  const [result] = await db.query(sql);
-  output.result = result;
-  output.success = !!result.affectedRows;
-
-  res.json(output);
-});
-
-router.get("/edit/:b2c_id", async (req, res) => {
-  const b2c_id = +req.params.b2c_id || 0;
-  if (!b2c_id) {
-    return res.redirect("/address-book");
-  }
-
-  const sql = `SELECT * FROM b2c_members WHERE b2c_id=${b2c_id}`;
-  const [rows] = await db.query(sql);
-  if (!rows.length) {
-    return res.redirect("/address-book");
-  }
-
-  rows[0].b2c_birthday = moment(rows[0].b2c_birthday).format(dateFormat);
-
-  res.render("address-book/edit", rows[0]);
 });
 
 // 更新 GET 請求處理函數
@@ -160,7 +118,6 @@ router.get("/api/:b2c_id", async (req, res) => {
   }
 
   const row = rows[0];
-  row.b2c_birthday = formatDate(row.b2c_birthday); // 格式化日期
 
   res.json({ success: true, data: row });
 });
@@ -199,5 +156,61 @@ router.put("/api/:b2c_id", upload.none(), async (req, res) => {
 
   res.json(output);
 });
+
+
+// 發送重設密碼郵件
+router.post('/request-password-reset', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const [rows] = await db.query('SELECT b2c_id FROM b2c_members WHERE b2c_email = ?', [email]);
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, error: '無效的郵箱' });
+    }
+
+    const user = rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const expireTime = moment().add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+
+    await db.query('UPDATE b2c_members SET reset_token = ?, reset_token_expire = ? WHERE b2c_id = ?', [token, expireTime, user.b2c_id]);
+
+    const resetLink = `http://your-frontend-domain.com/reset-password?token=${token}`;
+    await sendResetPasswordEmail(email, resetLink);
+
+    res.json({ success: true, message: 'OTP 已發送到您的信箱' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: '伺服器錯誤' });
+  }
+});
+
+// 處理重設密碼
+router.post('/reset-password/:token', async (req, res) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+
+  try {
+    const [rows] = await db.query('SELECT b2c_id, reset_token_expire FROM b2c_members WHERE reset_token = ?', [token]);
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, error: '無效的Token' });
+    }
+
+    const user = rows[0];
+    if (moment().isAfter(user.reset_token_expire)) {
+      return res.status(400).json({ success: false, error: 'Token已過期' });
+    }
+
+    const saltRounds = 8;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    await db.query('UPDATE b2c_members SET b2c_password = ?, reset_token = NULL, reset_token_expire = NULL WHERE b2c_id = ?', [hashedPassword, user.b2c_id]);
+
+    res.json({ success: true, message: '密碼已更新' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: '伺服器錯誤' });
+  }
+});
+
 
 export default router;
