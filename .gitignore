@@ -13,6 +13,7 @@ tmp_uploads
 .vscode
 headers.txt
 package-lock.json
+dev.env
 
 # Compiled Java class files
 *.class
