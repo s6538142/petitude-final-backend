@@ -211,8 +211,6 @@ router.put("/api/:article_id", upload.none(), async (req, res) => {
   }
 
   let body = { ...req.body };
-  const m = moment(body.birthday);
-  body.birthday = m.isValid() ? m.format(dateFormat) : null;
 
   try {
     const sql = "UPDATE `article` SET ? WHERE article_id=? ";
