@@ -3,6 +3,8 @@ import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
 import upload from "../utils/upload-imgs.js";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+import { sendResetPasswordEmail } from '../utils/send-email.js';
 
 const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
@@ -154,5 +156,61 @@ router.put("/api/:b2c_id", upload.none(), async (req, res) => {
 
   res.json(output);
 });
+
+
+// 發送重設密碼郵件
+router.post('/request-password-reset', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const [rows] = await db.query('SELECT b2c_id FROM b2c_members WHERE b2c_email = ?', [email]);
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, error: '無效的郵箱' });
+    }
+
+    const user = rows[0];
+    const token = crypto.randomBytes(32).toString('hex');
+    const expireTime = moment().add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+
+    await db.query('UPDATE b2c_members SET reset_token = ?, reset_token_expire = ? WHERE b2c_id = ?', [token, expireTime, user.b2c_id]);
+
+    const resetLink = `http://your-frontend-domain.com/reset-password?token=${token}`;
+    await sendResetPasswordEmail(email, resetLink);
+
+    res.json({ success: true, message: 'OTP 已發送到您的信箱' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: '伺服器錯誤' });
+  }
+});
+
+// 處理重設密碼
+router.post('/reset-password/:token', async (req, res) => {
+  const { token } = req.params;
+  const { newPassword } = req.body;
+
+  try {
+    const [rows] = await db.query('SELECT b2c_id, reset_token_expire FROM b2c_members WHERE reset_token = ?', [token]);
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, error: '無效的Token' });
+    }
+
+    const user = rows[0];
+    if (moment().isAfter(user.reset_token_expire)) {
+      return res.status(400).json({ success: false, error: 'Token已過期' });
+    }
+
+    const saltRounds = 8;
+    const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+    await db.query('UPDATE b2c_members SET b2c_password = ?, reset_token = NULL, reset_token_expire = NULL WHERE b2c_id = ?', [hashedPassword, user.b2c_id]);
+
+    res.json({ success: true, message: '密碼已更新' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: '伺服器錯誤' });
+  }
+});
+
 
 export default router;
