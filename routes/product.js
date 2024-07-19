@@ -17,31 +17,31 @@ const getListData = async (req) => {
       return { redirect: "?page=1" }; // 返回重定向對象
     }
 
-    let keyword = req.query.keyword || '';
-    let category = req.query.category || '';
-    let where = '';
+    let keyword = req.query.keyword || "";
+    let category = req.query.category || "";
+    let where = "";
 
-    if(keyword){
+    if (keyword) {
       const keyword_ = db.escape(`%${keyword}%`);
       where = `WHERE \`product_name\` LIKE ${keyword_}`;
     }
 
-    if(category){
-      where += where ? ' AND ' : ' WHERE '
-      switch(category){
-        case 'all':
-          where ='';
+    if (category) {
+      where += where ? " AND " : " WHERE ";
+      switch (category) {
+        case "all":
+          where = "";
           break;
-        case 'dog':
+        case "dog":
           where += `special_needs LIKE '%犬%'`;
           break;
-        case 'cat':
+        case "cat":
           where += `special_needs LIKE '%貓%'`;
           break;
-        case 'adult':
+        case "adult":
           where += `special_needs LIKE '%成犬%' OR special_needs LIKE '%成貓%'`;
           break;
-        case 'young':
+        case "young":
           where += `special_needs LIKE '%幼犬%' OR special_needs LIKE '%幼貓%'`;
           break;
       }
@@ -67,30 +67,35 @@ const getListData = async (req) => {
     success = true;
 
     return {
-      success, perPage, page, totalPages, totalRows, rows,
+      success,
+      perPage,
+      page,
+      totalPages,
+      totalRows,
+      rows,
     };
   } catch (error) {
-    console.error('Error in getListData:', error);
+    console.error("Error in getListData:", error);
     return { success: false, error: "Database error" };
   }
 };
 
-router.get("/", async(req, res) => {
+router.get("/", async (req, res) => {
   try {
     res.locals.title = "商品列表" + res.locals.title;
     res.locals.pageName = "index";
     const data = await getListData(req);
-    if(data.redirect){
+    if (data.redirect) {
       return res.redirect(data.redirect);
     }
     res.json(data);
   } catch (error) {
-    console.error('Error in root route:', error);
+    console.error("Error in root route:", error);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
-router.get("/api/:pk_product_id", async(req, res) => {
+router.get("/api/:pk_product_id", async (req, res) => {
   try {
     const pk_product_id = +req.params.pk_product_id || 0;
     if (!pk_product_id) {
@@ -99,14 +104,14 @@ router.get("/api/:pk_product_id", async(req, res) => {
 
     const sql = `SELECT * FROM product WHERE pk_product_id=?`;
     const [rows] = await db.query(sql, [pk_product_id]);
-    
+
     if (!rows.length) {
       return res.status(404).json({ success: false, error: "沒有該筆資料" });
     }
 
     res.json({ success: true, data: rows[0] });
   } catch (error) {
-    console.error('Error in single product route:', error);
+    console.error("Error in single product route:", error);
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
@@ -117,7 +122,7 @@ router.get("/counties", async (req, res) => {
     const [rows] = await db.query("SELECT * FROM county ORDER BY county_id");
     res.json({ success: true, data: rows });
   } catch (error) {
-    console.error('Error fetching counties:', error);
+    console.error("Error fetching counties:", error);
     res.status(500).json({ success: false, error: "無法獲取縣市資料" });
   }
 });
@@ -131,8 +136,12 @@ router.get("/cities/:countyId", async (req, res) => {
     );
     res.json({ success: true, data: rows });
   } catch (error) {
-    console.error('Error fetching cities:', error);
-    res.status(500).json({ success: false, error: "無法獲取鄉鎮市區資料", details: error.message });
+    console.error("Error fetching cities:", error);
+    res.status(500).json({
+      success: false,
+      error: "無法獲取鄉鎮市區資料",
+      details: error.message,
+    });
   }
 });
 
@@ -141,24 +150,58 @@ router.get("/cities/:countyId", async (req, res) => {
 router.post("/cartCheckout", async (req, res) => {
   let connection;
   try {
-    const { cartItems, ...customerInfo } = req.body;
+    const { cartItems = [], ...customerInfo } = req.body;
+    console.log("Received data:", req.body);
+
+    // 驗證必要的欄位
+    if (!customerInfo.buyerName) {
+      return res
+        .status(400)
+        .json({ success: false, error: "購買人姓名是必填欄位" });
+    }
+
+    if (!customerInfo.mobile) {
+      return res
+        .status(400)
+        .json({ success: false, error: "手機號碼是必填欄位" });
+    }
+
+    // 確保 cartItems 是一個數組
+    if (!Array.isArray(cartItems)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid cart items" });
+    }
 
     // 開始處理資料庫新增
     connection = await db.getConnection();
     await connection.beginTransaction();
 
     // 獲取縣市和鄉鎮市區的 ID
-    const [countyResult] = await connection.query(
-      "SELECT county_id FROM county WHERE county_name = ?",
-      [customerInfo.county]
-    );
-    const countyId = countyResult[0]?.county_id;
+    let countyId, cityId;
+    if (customerInfo.county) {
+      const [countyResult] = await connection.query(
+        "SELECT county_id FROM county WHERE county_name = ?",
+        [customerInfo.county]
+      );
+      countyId = countyResult[0]?.county_id;
+    }
 
-    const [cityResult] = await connection.query(
-      "SELECT city_id FROM city WHERE city_name = ? AND fk_county_id = ?",
-      [customerInfo.city, countyId]
-    );
-    const cityId = cityResult[0]?.city_id;
+    if (customerInfo.city && countyId) {
+      const [cityResult] = await connection.query(
+        "SELECT city_id FROM city WHERE city_name = ? AND fk_county_id = ?",
+        [customerInfo.city, countyId]
+      );
+      cityId = cityResult[0]?.city_id;
+    }
+
+    // 計算總價
+    const totalPrice = Array.isArray(cartItems)
+      ? cartItems.reduce(
+          (total, item) => total + item.product_price * item.qty,
+          0
+        )
+      : 0;
 
     // 新增訂單資料表
     const [orderResult] = await connection.query(
@@ -168,12 +211,12 @@ router.post("/cartCheckout", async (req, res) => {
       [
         customerInfo.buyerName,
         customerInfo.paymentMethod,
-        cartItems.reduce((total, item) => total + item.product_price * item.qty, 0),
+        totalPrice,
         countyId,
         cityId,
         customerInfo.address,
         customerInfo.mobile,
-        customerInfo.telephone
+        customerInfo.telephone,
       ]
     );
 
@@ -196,14 +239,15 @@ router.post("/cartCheckout", async (req, res) => {
     if (connection) {
       await connection.rollback();
     }
-    console.error('Error in checkout:', error);
-    res.status(500).json({ success: false, error: "訂單創建失敗" });
+    console.error("Error in checkout:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "訂單創建失敗", details: error.message });
   } finally {
     if (connection) {
       connection.release();
     }
   }
 });
-
 
 export default router;

@@ -1,6 +1,7 @@
 import express from "express";
 const router = express.Router();
 import * as crypto from "crypto";
+import db from "./../utils/connect-mysql.js";
 
 /* GET home page. */
 router.get("/", function (req, res, next) {
@@ -169,76 +170,76 @@ router.get("/", function (req, res, next) {
   res.json({ htmlContent });
 });
 
-router.post("/payment-result", async (req, body) => {
-  // 處理綠界的回調
-  const { RtnCode, TradeNo, TradeAmt, PaymentDate } = req.body;
-  const { cartItems, ...customerInfo } = req.body;
+// router.post("/payment-result", async (req, body) => {
+//   // 處理綠界的回調
+//   const { RtnCode, TradeNo, TradeAmt, PaymentDate } = req.body;
+//   const { cartItems, ...customerInfo } = req.body;
 
-  if (RtnCode === "1") {
-    // 支付成功
-    try {
-      // 開始處理資料庫新增
-      connection = await db.getConnection();
-      await connection.beginTransaction();
+//   if (RtnCode === "1") {
+//     // 支付成功
+//     try {
+//       // 開始處理資料庫新增
+//       connection = await db.getConnection();
+//       await connection.beginTransaction();
 
-      // 獲取縣市和鄉鎮市區的 ID
-      const [countyResult] = await connection.query(
-        "SELECT county_id FROM county WHERE county_name = ?",
-        [customerInfo.county]
-      );
-      const countyId = countyResult[0]?.county_id;
+//       // 獲取縣市和鄉鎮市區的 ID
+//       const [countyResult] = await connection.query(
+//         "SELECT county_id FROM county WHERE county_name = ?",
+//         [customerInfo.county]
+//       );
+//       const countyId = countyResult[0]?.county_id;
 
-      const [cityResult] = await connection.query(
-        "SELECT city_id FROM city WHERE city_name = ? AND fk_county_id = ?",
-        [customerInfo.city, countyId]
-      );
-      const cityId = cityResult[0]?.city_id;
+//       const [cityResult] = await connection.query(
+//         "SELECT city_id FROM city WHERE city_name = ? AND fk_county_id = ?",
+//         [customerInfo.city, countyId]
+//       );
+//       const cityId = cityResult[0]?.city_id;
 
-      // 新增訂單資料表
-      const [orderResult] = await connection.query(
-        `INSERT INTO request 
-    (b2c_name, payment_method, request_price, fk_county_id, fk_city_id, recipient_address, recipient_mobile, recipient_phone, request_date) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          customerInfo.buyerName,
-          customerInfo.paymentMethod,
-          cartItems.reduce(
-            (total, item) => total + item.product_price * item.qty,
-            0
-          ),
-          countyId,
-          cityId,
-          customerInfo.address,
-          customerInfo.mobile,
-          customerInfo.telephone,
-        ]
-      );
+//       // 新增訂單資料表
+//       const [orderResult] = await connection.query(
+//         `INSERT INTO request
+//     (b2c_name, payment_method, request_price, fk_county_id, fk_city_id, recipient_address, recipient_mobile, recipient_phone, request_date)
+//     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+//         [
+//           customerInfo.buyerName,
+//           customerInfo.paymentMethod,
+//           cartItems.reduce(
+//             (total, item) => total + item.product_price * item.qty,
+//             0
+//           ),
+//           countyId,
+//           cityId,
+//           customerInfo.address,
+//           customerInfo.mobile,
+//           customerInfo.telephone,
+//         ]
+//       );
 
-      const orderId = orderResult.insertId;
+//       const orderId = orderResult.insertId;
 
-      // 新增訂單詳情
-      for (const item of cartItems) {
-        await connection.query(
-          "INSERT INTO request_detail (fk_request_id, fk_product_id, purchase_quantity, purchase_price) VALUES (?, ?, ?, ?)",
-          [orderId, item.pk_product_id, item.qty, item.product_price]
-        );
-      }
+//       // 新增訂單詳情
+//       for (const item of cartItems) {
+//         await connection.query(
+//           "INSERT INTO request_detail (fk_request_id, fk_product_id, purchase_quantity, purchase_price) VALUES (?, ?, ?, ?)",
+//           [orderId, item.pk_product_id, item.qty, item.product_price]
+//         );
+//       }
 
-      // 提交表單
-      await connection.commit();
+//       // 提交表單
+//       await connection.commit();
 
-      res.json({ success: true, message: "訂單已成功創建" });
+//       res.json({ success: true, message: "訂單已成功創建" });
 
-      // 重定向到成功頁面，並傳遞訂單編號和課程ID
-      res.redirect("http://localhost:3000/estore");
-    } catch (error) {
-      console.error("保存訂單失敗:", error);
-      res.status(500).send("訂單處理失敗");
-    }
-  } else {
-    // 支付失敗
-    res.redirect("http://localhost:3000/");
-  }
-});
+//       // 重定向到成功頁面，並傳遞訂單編號和課程ID
+//       res.redirect("http://localhost:3000/estore");
+//     } catch (error) {
+//       console.error("保存訂單失敗:", error);
+//       res.status(500).send("訂單處理失敗");
+//     }
+//   } else {
+//     // 支付失敗
+//     res.redirect("http://localhost:3000/");
+//   }
+// });
 
 export default router;
