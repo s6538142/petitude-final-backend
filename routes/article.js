@@ -1,34 +1,105 @@
 import express from "express";
 import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
+import multer from "multer";
 
-const dateFormat = "YYYY-MM-DD";
 const router = express.Router();
+const dateFormat = "YYYY-MM-DD";
 
-// fetch article and messages
+// 设置 multer 存储位置和文件命名方式
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+const upload = multer({ storage });
+
+router.post("/add", upload.single("article_img"), async (req, res) => {
+  try {
+    const { article_name, article_content, fk_class_id } = req.body;
+    const article_img = req.file ? req.file.filename : null;
+    console.log("Received data:", {
+      article_name,
+      article_content,
+      fk_class_id,
+      article_img,
+    }); // 记录接收到的数据
+
+    const article_date = moment().format(dateFormat);
+
+    if (!article_name || !article_content || !fk_class_id) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Missing required fields" });
+    }
+
+    const sql = `
+      INSERT INTO article (article_date, article_name, article_content, fk_class_id, article_img)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const values = [
+      article_date,
+      article_name,
+      article_content,
+      fk_class_id,
+      article_img,
+    ];
+
+    console.log("Executing SQL:", sql);
+    console.log("With values:", values);
+
+    await db.query(sql, values);
+
+    res.json({ success: true, message: "Article added successfully" });
+  } catch (error) {
+    console.error("Error adding article:", error); // 记录详细错误信息
+    res.status(500).json({ success: false, error: "Failed to add article" });
+  }
+});
+
+// 取得單項資料的 API
+router.get("/api/:article_id", async (req, res) => {
+  const article_id = +req.params.article_id || 0;
+  if (!article_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM article WHERE article_id=${article_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    // 沒有該筆資料
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  res.json({ success: true, data: rows[0] });
+});
+
+// 获取文章和留言的功能
 const getArticleAndMessages = async (article_id) => {
   try {
-    // Fetch article
     const articleSql = `
       SELECT a.*, c.class_name
       FROM article a
       JOIN class c ON a.fk_class_id = c.class_id
-      WHERE a.article_id = ?`;
+      WHERE a.article_id = ?
+    `;
     const [articleRows] = await db.query(articleSql, [article_id]);
     if (!articleRows.length) {
       throw new Error("Article not found");
     }
 
-    // Fetch messages
     const messageSql = `
       SELECT m.*, b.b2c_name
       FROM message m
       JOIN b2c_members b ON m.fk_b2c_id = b.b2c_id
       WHERE m.fk_article_id = ?
-      ORDER BY m.message_date DESC`;
+      ORDER BY m.message_date DESC
+    `;
     const [messageRows] = await db.query(messageSql, [article_id]);
 
-    // 格式化文章日期
     articleRows[0].article_date = moment(articleRows[0].article_date).isValid()
       ? moment(articleRows[0].article_date).format(dateFormat)
       : "";
@@ -44,8 +115,8 @@ const getListData = async (req) => {
   let success = false;
   let redirect = "";
 
-  const perPage = 25; // 每頁最多有幾筆資料
-  let page = parseInt(req.query.page) || 1; // 從 query string 取得 page 的值
+  const perPage = 25;
+  let page = parseInt(req.query.page) || 1;
   if (page < 1) {
     redirect = "?page=1";
     return { success, redirect };
@@ -60,22 +131,22 @@ const getListData = async (req) => {
 
   const t_sql = `SELECT COUNT(1) totalRows FROM article a ${where}`;
   const [[{ totalRows }]] = await db.query(t_sql);
-  let totalPages = 0; // 總頁數, 預設值
-  let rows = []; // 分頁資料
+  let totalPages = 0;
+  let rows = [];
   if (totalRows) {
     totalPages = Math.ceil(totalRows / perPage);
     if (page > totalPages) {
       redirect = `?page=${totalPages}`;
       return { success, redirect };
     }
-    // 取得分頁資料
     const sql = `
       SELECT a.*, c.class_name
       FROM article a
       JOIN class c ON a.fk_class_id = c.class_id
       ${where}
       ORDER BY a.article_id DESC
-      LIMIT ${(page - 1) * perPage},${perPage}`;
+      LIMIT ${(page - 1) * perPage},${perPage}
+    `;
     [rows] = await db.query(sql);
     rows.forEach((el) => {
       const m = moment(el.article_date);
@@ -94,7 +165,6 @@ const getListData = async (req) => {
   };
 };
 
-// 文章列表頁面
 router.get("/", async (req, res) => {
   res.locals.title = "文章列表 | " + res.locals.title;
   res.locals.pageName = "article_list";
@@ -107,14 +177,12 @@ router.get("/", async (req, res) => {
   }
 });
 
-// 取得文章列表的 API
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
   res.json(data);
 });
 
-// 取得單篇文章的 API
-router.get("/api/:article_id", async (req, res) => {
+router.get("/article_page/:article_id", async (req, res) => {
   const article_id = +req.params.article_id || 0;
   if (!article_id) {
     return res.json({ success: false, error: "Invalid article ID" });
@@ -127,6 +195,34 @@ router.get("/api/:article_id", async (req, res) => {
     console.error("Error fetching article:", error);
     res.json({ success: false, error: "Failed to fetch article" });
   }
+});
+
+// 處理編輯的表單
+router.put("/api/:article_id", upload.none(), async (req, res) => {
+  const output = {
+    success: false,
+    code: 0,
+    result: {},
+  };
+
+  const article_id = +req.params.article_id || 0;
+  if (!article_id) {
+    return res.json(output);
+  }
+
+  let body = { ...req.body };
+
+  try {
+    const sql = "UPDATE `article` SET ? WHERE article_id=? ";
+
+    const [result] = await db.query(sql, [body, article_id]);
+    output.result = result;
+    output.success = !!(result.affectedRows && result.changedRows);
+  } catch (ex) {
+    output.error = ex;
+  }
+
+  res.json(output);
 });
 
 export default router;
