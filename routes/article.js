@@ -60,6 +60,23 @@ router.post("/add", upload.single("article_img"), async (req, res) => {
   }
 });
 
+// 取得單項資料的 API
+router.get("/api/:article_id", async (req, res) => {
+  const article_id = +req.params.article_id || 0;
+  if (!article_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM article WHERE article_id=${article_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    // 沒有該筆資料
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  res.json({ success: true, data: rows[0] });
+});
+
 // 获取文章和留言的功能
 const getArticleAndMessages = async (article_id) => {
   try {
@@ -165,7 +182,7 @@ router.get("/api", async (req, res) => {
   res.json(data);
 });
 
-router.get("/api/:article_id", async (req, res) => {
+router.get("/article_page/:article_id", async (req, res) => {
   const article_id = +req.params.article_id || 0;
   if (!article_id) {
     return res.json({ success: false, error: "Invalid article ID" });
@@ -178,6 +195,36 @@ router.get("/api/:article_id", async (req, res) => {
     console.error("Error fetching article:", error);
     res.json({ success: false, error: "Failed to fetch article" });
   }
+});
+
+// 處理編輯的表單
+router.put("/api/:article_id", upload.none(), async (req, res) => {
+  const output = {
+    success: false,
+    code: 0,
+    result: {},
+  };
+
+  const article_id = +req.params.article_id || 0;
+  if (!article_id) {
+    return res.json(output);
+  }
+
+  let body = { ...req.body };
+  const m = moment(body.birthday);
+  body.birthday = m.isValid() ? m.format(dateFormat) : null;
+
+  try {
+    const sql = "UPDATE `article` SET ? WHERE article_id=? ";
+
+    const [result] = await db.query(sql, [body, article_id]);
+    output.result = result;
+    output.success = !!(result.affectedRows && result.changedRows);
+  } catch (ex) {
+    output.error = ex;
+  }
+
+  res.json(output);
 });
 
 export default router;
