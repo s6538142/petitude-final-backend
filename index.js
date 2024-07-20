@@ -15,10 +15,16 @@ import articleRouter from "./routes/article.js";
 import cors from "cors";
 import bkRouter from "./routes/booking.js";
 import prRouter from "./routes/product.js";
-import paymentRouter from "./routes/ecpay.js"
+import paymentRouter from "./routes/ecpay.js";
 import pjRouter from "./routes/project.js";
 import rvRouter from "./routes/reservation.js";
 import memberRouter from "./routes/b2c_member.js";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" }); // 初始化 Multer 以將上傳的檔案暫存到 tmp_uploads 資料夾
@@ -32,6 +38,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // 只會解析 application/json 格式的請求
 app.use(express.json());
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const corsOptions = {
   credentials: true,
@@ -77,7 +85,6 @@ app.get("/", (req, res) => {
   res.locals.title = "首頁 | " + res.locals.title;
   res.render("home", { name: "Shinder" });
 });
-
 
 app.use("/b2c_member", memberRouter);
 
