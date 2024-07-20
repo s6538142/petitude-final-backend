@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import db from "./../utils/connect-mysql.js";
+// import { consumers } from "nodemailer/lib/xoauth2/index.js";
 
 const router = express.Router();
 
@@ -177,6 +178,15 @@ router.post("/cartCheckout", async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
+    let b2cId;
+    if (customerInfo.buyerName) {
+      const [b2cResult] = await connection.query(
+        "SELECT b2c_id FROM b2c_members WHERE b2c_name = ?",
+        [customerInfo.buyerName]
+      );
+      b2cId = b2cResult[0]?.b2c_id;
+    }
+
     // 獲取縣市和鄉鎮市區的 ID
     let countyId, cityId;
     if (customerInfo.county) {
@@ -206,11 +216,10 @@ router.post("/cartCheckout", async (req, res) => {
     // 新增訂單資料表
     const [orderResult] = await connection.query(
       `INSERT INTO request 
-      (b2c_name, payment_method, request_price, fk_county_id, fk_city_id, recipient_address, recipient_mobile, recipient_phone, request_date) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      (fk_b2c_id, request_price, fk_county_id, fk_city_id, recipient_address, recipient_mobile, recipient_phone, request_date) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
-        customerInfo.buyerName,
-        customerInfo.paymentMethod,
+        b2cId,
         totalPrice,
         countyId,
         cityId,
