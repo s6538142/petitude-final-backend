@@ -2,27 +2,53 @@ import express from "express";
 import cors from "cors";
 import db from "./../utils/connect-mysql.js";
 
+
 const router = express.Router();
 
-// 添加 CORS 
+// 添加 CORS
 router.use(cors());
 
 const getListData = async (req) => {
   try {
     let success = false;
-    let rows = [];
 
-    const t_sql = `SELECT COUNT(1) totalRows FROM project`;
+    const perPage = 20; // 每頁最多有幾筆資料
+    let page = parseInt(req.query.page) || 1; // 從 query string 獲得 page 的值
+    if (page < 1) {
+      return { redirect: "?page=1" }; // 返回重定向對象
+    }
+
+    let keyword = req.query.keyword || "";
+    let where = "";
+    if (keyword) {
+      const keyword_ = db.escape(`%${keyword}%`);
+      where = `WHERE \`project_name\` LIKE ${keyword_}`;
+    }
+
+    const t_sql = `SELECT COUNT(1) totalRows FROM project ${where}`;
     const [[{ totalRows }]] = await db.query(t_sql);
 
-    // 取得分頁資料
-    const sql = `SELECT * FROM project`;
-    [rows] = await db.query(sql);
+    let totalPages = 0; // 總頁數, 預設值
+    let rows = []; // 分頁資料
+    if (totalRows) {
+      totalPages = Math.ceil(totalRows / perPage);
+      if (page > totalPages) {
+        return { redirect: `?page=${totalPages}` }; // 返回重定向對象
+      }
+      // 取得分頁資料
+      const sql = `SELECT * FROM \`project\`${where} LIMIT ${
+        (page - 1) * perPage
+      },${perPage}`;
+      [rows] = await db.query(sql);
+    }
 
     success = true;
 
     return {
       success,
+      perPage,
+      page,
+      totalPages,
       totalRows,
       rows,
     };
@@ -31,6 +57,8 @@ const getListData = async (req) => {
     return { success: false, error: "Database error" };
   }
 };
+
+
 router.get("/", async (req, res) => {
   try {
     res.locals.title = "契約列表" + res.locals.title;
@@ -66,80 +94,111 @@ router.get("/api/:project_id", async (req, res) => {
     res.status(500).json({ success: false, error: "Server error" });
   }
 });
-// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-// 獲取所有縣市
-router.get("/counties", async (req, res) => {
-  try {
-    const [rows] = await db.query("SELECT * FROM county ORDER BY county_id");
-    res.json({ success: true, data: rows });
-  } catch (error) {
-    console.error('Error fetching counties:', error);
-    res.status(500).json({ success: false, error: "無法獲取縣市資料" });
-  }
-});
 
-// 獲取特定縣市的所有鄉鎮市區
-router.get("/cities/:countyId", async (req, res) => {
-  try {
-    const [rows] = await db.query(
-      "SELECT * FROM city WHERE fk_county_id = ? ORDER BY city_id",
-      [req.params.countyId]
-    );
-    res.json({ success: true, data: rows });
-  } catch (error) {
-    console.error('Error fetching cities:', error);
-    res.status(500).json({ success: false, error: "無法獲取鄉鎮市區資料", details: error.message });
-  }
-});
-
-// 結帳用路由
+// 結帳用路由, 丟入資料庫的地方
 
 router.post("/cartCheckout1", async (req, res) => {
   let connection;
   try {
-    const { cartProjects, ...customerInfo } = req.body;
+    //把東西都抓出來
+    const { cartItems = [], ...customerInfo } = req.body;
+    console.log("Received data:", req.body);
+
+    // 驗證必要的欄位
+    if (!customerInfo.buyerName) {
+      return res
+        .status(400)
+        .json({ success: false, error: "購買人姓名是必填欄位" });
+    }
+
+    if (!customerInfo.mobile) {
+      return res
+        .status(400)
+        .json({ success: false, error: "手機號碼是必填欄位" });
+    }
+
+    // 確保 cartItems 是一個數組
+    if (!Array.isArray(cartItems)) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Invalid cart items" });
+    }
 
     // 開始處理資料庫新增
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    // 獲取縣市和鄉鎮市區的 ID
-    const [countyResult] = await connection.query(
-      "SELECT county_id FROM county WHERE county_name = ?",
-      [customerInfo.county]
-    );
-    const countyId = countyResult[0]?.county_id;
+    // 獲取會員id, 用buyername去select這名字的id是多少
+    let b2cId;
+    if (customerInfo.buyerName) {
+      const [b2cResult] = await connection.query(
+        "SELECT b2c_id FROM b2c_members WHERE b2c_name = ?",
+        [customerInfo.buyerName]
+      );
+      // 把b2cResult轉為b2cId
+      b2cId = b2cResult[0]?.b2c_id;
+    }
 
-    const [cityResult] = await connection.query(
-      "SELECT city_id FROM city WHERE city_name = ? AND fk_county_id = ?",
-      [customerInfo.city, countyId]
-    );
-    const cityId = cityResult[0]?.city_id;
+    let projectId;
+    if (customerInfo.projectName) {
+      const [projectResult] = await connection.query(
+        "SELECT project_id FROM project WHERE fk_project_name = ?",
+        [customerInfo.projectName]
+      );
+      projectId = projectResult[0]?.project_id;
+      console.log("projectId:", projectId); 
+    }
+
+    // let stateId = null;
+    // if (customerInfo.stateNumber) {
+    //   const [stateResult] = await connection.query(
+    //     "SELECT booking_state FROM booking",
+    //     [customerInfo.stateNumber]
+    //   );
+    //   stateId = stateResult[0]?.booking_state || 0; // 設置預設值
+    //   console.log("stateId:", stateId); 
+    // }
+
+    // let billId;
+    // if (customerInfo.billNumber) {
+    //   const [billResult] = await connection.query(
+    //     "SELECT billNumber FROM booking",
+    //     [customerInfo.billNumber]
+    //   );
+    //   billId = billResult[0]?.billNumber;
+    //   console.log("billId:", billId); 
+    // }
+
+
+    // 計算總價
+    const totalPrice = Array.isArray(cartItems)
+      ? cartItems.reduce(
+          (total, item) => total + item.project_price * item.qty,
+          0
+        )
+      : 0;
 
     // 新增訂單資料表
     const [orderResult] = await connection.query(
-      `INSERT INTO request 
-      (b2c_name, payment_method, request_price, fk_county_id, fk_city_id, recipient_address, recipient_mobile, recipient_phone, request_date) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      `INSERT INTO booking 
+  (fk_b2c_id, fk_project_id, booking_price, booking_date) 
+  VALUES (?, ?, ?, ?, ?, NOW())`,
       [
-        customerInfo.buyerName,
-        customerInfo.paymentMethod,
-        cartProjects.reduce((total, items) => total + items.project_price * items.qty, 0),
-        countyId,
-        cityId,
-        customerInfo.address,
-        customerInfo.mobile,
-        customerInfo.telephone
+        b2cId,
+        projectId,
+        totalPrice,
       ]
     );
+    console.log("orderResult:", orderResult); 
 
     const orderId = orderResult.insertId;
+    console.log("orderId:", orderId); 
 
     // 新增訂單詳情
-    for (const items of cartProjects) {
+    for (const item of cartItems) {
       await connection.query(
-        "INSERT INTO request_detail (fk_request_id, project_id, purchase_quantity, purchase_price) VALUES (?, ?, ?, ?)",
-        [orderId, items.project_id, items.qty, items.project_price]
+        "INSERT INTO booking_detail (fk_booking_id, fk_project_id) VALUES (?, ?)",
+        [orderId, item.project_id]
       );
     }
 
@@ -152,8 +211,10 @@ router.post("/cartCheckout1", async (req, res) => {
     if (connection) {
       await connection.rollback();
     }
-    console.error('Error in checkout:', error);
-    res.status(500).json({ success: false, error: "訂單創建失敗" });
+    console.error("Error in checkout:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "訂單創建失敗", details: error.message });
   } finally {
     if (connection) {
       connection.release();
