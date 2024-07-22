@@ -147,6 +147,24 @@ router.get("/cities/:countyId", async (req, res) => {
 });
 
 // 結帳用路由
+router.get("/user/:b2c_id", async (req, res) => {
+  try {
+    const b2c_id = req.params.b2c_id;
+    const [rows] = await db.query(
+      "SELECT * FROM b2c_members WHERE b2c_id = ?",
+      [b2c_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
 
 router.post("/cartCheckout", async (req, res) => {
   let connection;
