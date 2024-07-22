@@ -169,15 +169,42 @@ router.post('/request-password-reset', async (req, res) => {
     }
 
     const user = rows[0];
-    const token = crypto.randomBytes(32).toString('hex');
+    const resetCode = crypto.randomInt(100000, 999999).toString(); // 生成六位數驗證碼
     const expireTime = moment().add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
 
-    await db.query('UPDATE b2c_members SET reset_token = ?, reset_token_expire = ? WHERE b2c_id = ?', [token, expireTime, user.b2c_id]);
+    // 更新數據庫中的驗證碼和過期時間
+    await db.query('UPDATE b2c_members SET reset_code = ?, reset_code_expire = ? WHERE b2c_id = ?', [resetCode, expireTime, user.b2c_id]);
 
-    const resetLink = `http://your-frontend-domain.com/reset-password?token=${token}`;
-    await sendResetPasswordEmail(email, resetLink);
+    // 生成郵件內容
+    const emailContent = `
+      <p>您的重設密碼驗證碼是 <strong>${resetCode}</strong>。</p>
+      <p>請在接下來的 1 小時內輸入這個驗證碼。</p>
+    `;
+    await sendResetPasswordEmail(email, '密碼重設驗證碼', emailContent);
 
-    res.json({ success: true, message: 'OTP 已發送到您的信箱' });
+    res.json({ success: true, message: '驗證碼已發送到您的郵箱' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: '伺服器錯誤' });
+  }
+});
+
+// 驗證碼驗證
+router.post('/verify-reset-code', async (req, res) => {
+  const { code } = req.body;
+
+  try {
+    const [rows] = await db.query('SELECT b2c_id, reset_code_expire FROM b2c_members WHERE reset_code = ?', [code]);
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, error: '無效的驗證碼' });
+    }
+
+    const user = rows[0];
+    if (moment().isAfter(user.reset_code_expire)) {
+      return res.status(400).json({ success: false, error: '驗證碼已過期' });
+    }
+
+    res.json({ success: true, data: user.b2c_id });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, error: '伺服器錯誤' });
@@ -185,25 +212,24 @@ router.post('/request-password-reset', async (req, res) => {
 });
 
 // 處理重設密碼
-router.post('/reset-password/:token', async (req, res) => {
-  const { token } = req.params;
-  const { newPassword } = req.body;
+router.post('/reset-password', async (req, res) => {
+  const { resetCode, newPassword } = req.body;
 
   try {
-    const [rows] = await db.query('SELECT b2c_id, reset_token_expire FROM b2c_members WHERE reset_token = ?', [token]);
+    const [rows] = await db.query('SELECT b2c_id, reset_code_expire FROM b2c_members WHERE reset_code = ?', [resetCode]);
     if (rows.length === 0) {
-      return res.status(400).json({ success: false, error: '無效的Token' });
+      return res.status(400).json({ success: false, error: '無效的驗證碼' });
     }
 
     const user = rows[0];
-    if (moment().isAfter(user.reset_token_expire)) {
-      return res.status(400).json({ success: false, error: 'Token已過期' });
+    if (moment().isAfter(user.reset_code_expire)) {
+      return res.status(400).json({ success: false, error: '驗證碼已過期' });
     }
 
     const saltRounds = 8;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    await db.query('UPDATE b2c_members SET b2c_password = ?, reset_token = NULL, reset_token_expire = NULL WHERE b2c_id = ?', [hashedPassword, user.b2c_id]);
+    await db.query('UPDATE b2c_members SET b2c_password = ?, reset_code = NULL, reset_code_expire = NULL WHERE b2c_id = ?', [hashedPassword, user.b2c_id]);
 
     res.json({ success: true, message: '密碼已更新' });
   } catch (error) {
@@ -211,6 +237,7 @@ router.post('/reset-password/:token', async (req, res) => {
     res.status(500).json({ success: false, error: '伺服器錯誤' });
   }
 });
+
 
 
 export default router;

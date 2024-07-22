@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 
 // 創建並導出發送重設密碼郵件的函數
-export const sendResetPasswordEmail = async (to, resetLink) => {
+export const sendResetPasswordEmail = async (to, subject, content) => {
   // 配置 nodemailer transporter
   const transporter = nodemailer.createTransport({
     service: 'gmail', // 使用 Gmail 作為郵件服務器
@@ -15,8 +15,8 @@ export const sendResetPasswordEmail = async (to, resetLink) => {
   const mailOptions = {
     from: process.env.EMAIL_USER, // 發件人
     to, // 收件人
-    subject: '重設密碼', // 郵件主題
-    html: `<p>請點擊以下連結重設您的密碼：</p><a href="${resetLink}">重設密碼</a>`, // 郵件內容
+    subject, // 郵件主題
+    html: content, // 郵件內容
   };
 
   // 發送郵件
