@@ -128,7 +128,7 @@ router.post("/cartCheckout1", async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    // 獲取會員id, 用buyername去select這名字的id是多少
+    // 獲取會員id, 用buyerName去select這名字的id是多少
     let b2cId;
     if (customerInfo.buyerName) {
       const [b2cResult] = await connection.query(
@@ -142,32 +142,22 @@ router.post("/cartCheckout1", async (req, res) => {
     let projectId;
     if (customerInfo.projectName) {
       const [projectResult] = await connection.query(
-        "SELECT project_id FROM project WHERE fk_project_name = ?",
+        "SELECT project_id FROM project WHERE project_name = ?",
         [customerInfo.projectName]
       );
       projectId = projectResult[0]?.project_id;
-      console.log("projectId:", projectId); 
+      console.log("projectId:", projectId);
     }
 
-    // let stateId = null;
-    // if (customerInfo.stateNumber) {
-    //   const [stateResult] = await connection.query(
-    //     "SELECT booking_state FROM booking",
-    //     [customerInfo.stateNumber]
-    //   );
-    //   stateId = stateResult[0]?.booking_state || 0; // 設置預設值
-    //   console.log("stateId:", stateId); 
-    // }
-
-    // let billId;
-    // if (customerInfo.billNumber) {
-    //   const [billResult] = await connection.query(
-    //     "SELECT billNumber FROM booking",
-    //     [customerInfo.billNumber]
-    //   );
-    //   billId = billResult[0]?.billNumber;
-    //   console.log("billId:", billId); 
-    // }
+    let stateId = 0; // 设定一个默认值
+    if (customerInfo.projectName) {
+      const [stateResult] = await connection.query(
+        "SELECT booking_state FROM booking",
+        [customerInfo.booking_state]
+      );
+      stateId = stateResult[0]?.booking_state || 0; 
+      console.log("stateId:", stateId);
+    }
 
 
     // 計算總價
@@ -181,18 +171,14 @@ router.post("/cartCheckout1", async (req, res) => {
     // 新增訂單資料表
     const [orderResult] = await connection.query(
       `INSERT INTO booking 
-  (fk_b2c_id, fk_project_id, booking_price, booking_date) 
-  VALUES (?, ?, ?, ?, ?, NOW())`,
-      [
-        b2cId,
-        projectId,
-        totalPrice,
-      ]
+  (fk_b2c_id, fk_project_id, booking_state, booking_price, booking_date) 
+  VALUES (?, ?, ?, ?, NOW())`,
+      [b2cId, projectId, stateId, totalPrice]
     );
-    console.log("orderResult:", orderResult); 
+    console.log("orderResult:", orderResult);
 
     const orderId = orderResult.insertId;
-    console.log("orderId:", orderId); 
+    console.log("orderId:", orderId);
 
     // 新增訂單詳情
     for (const item of cartItems) {
