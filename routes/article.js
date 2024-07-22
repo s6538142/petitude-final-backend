@@ -2,6 +2,8 @@ import express from "express";
 import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
 import multer from "multer";
+import { v4 as uuidv4 } from "uuid"; // 使用 import 语法引入 uuid
+import path from "path";
 
 const router = express.Router();
 const dateFormat = "YYYY-MM-DD";
@@ -12,7 +14,9 @@ const storage = multer.diskStorage({
     cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
+    const uniqueSuffix = uuidv4().split("-")[0]; // 生成UUID，并取前8位作为唯一标识
+    const ext = path.extname(file.originalname); // 提取文件扩展名
+    cb(null, `${uniqueSuffix}${ext}`);
   },
 });
 const upload = multer({ storage });
