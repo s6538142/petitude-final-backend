@@ -18,6 +18,7 @@ import prRouter from "./routes/product.js";
 import paymentRouter from "./routes/ecpay.js";
 import pjRouter from "./routes/project.js";
 import rvRouter from "./routes/reservation.js";
+import paymentRouter1 from "./routes/ecpay1.js";
 import memberRouter from "./routes/b2c_member.js";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -268,6 +269,7 @@ app.get('/test', (req, res) => {
 app.use("/project", pjRouter);
 app.use("/reservation", rvRouter);
 app.use("/booking", bkRouter);
+app.use("/ecpay1", paymentRouter1);
 
 // 生命禮儀路由結束
 
