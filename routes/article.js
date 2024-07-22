@@ -202,31 +202,39 @@ router.get("/article_page/:article_id", async (req, res) => {
 });
 
 // 處理編輯的表單
-router.put("/api/:article_id", upload.none(), async (req, res) => {
-  const output = {
-    success: false,
-    code: 0,
-    result: {},
-  };
+router.put(
+  "/api/:article_id",
+  upload.single("article_img"),
+  async (req, res) => {
+    const output = {
+      success: false,
+      code: 0,
+      result: {},
+    };
 
-  const article_id = +req.params.article_id || 0;
-  if (!article_id) {
-    return res.json(output);
+    const article_id = +req.params.article_id || 0;
+    if (!article_id) {
+      return res.json(output);
+    }
+
+    let body = { ...req.body };
+    const article_img = req.file ? req.file.filename : null;
+
+    if (article_img) {
+      body.article_img = article_img;
+    }
+
+    try {
+      const sql = "UPDATE `article` SET ? WHERE article_id=? ";
+      const [result] = await db.query(sql, [body, article_id]);
+      output.result = result;
+      output.success = !!(result.affectedRows && result.changedRows);
+    } catch (ex) {
+      output.error = ex;
+    }
+
+    res.json(output);
   }
-
-  let body = { ...req.body };
-
-  try {
-    const sql = "UPDATE `article` SET ? WHERE article_id=? ";
-
-    const [result] = await db.query(sql, [body, article_id]);
-    output.result = result;
-    output.success = !!(result.affectedRows && result.changedRows);
-  } catch (ex) {
-    output.error = ex;
-  }
-
-  res.json(output);
-});
+);
 
 export default router;
