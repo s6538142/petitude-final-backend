@@ -119,7 +119,7 @@ const getListData = async (req) => {
   let success = false;
   let redirect = "";
 
-  const perPage = 25;
+  const perPage = 10; // 每頁加載10個項目
   let page = parseInt(req.query.page) || 1;
   if (page < 1) {
     redirect = "?page=1";
