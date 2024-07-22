@@ -23,32 +23,34 @@ const upload = multer({ storage });
 
 router.post("/add", upload.single("article_img"), async (req, res) => {
   try {
-    const { article_name, article_content, fk_class_id } = req.body;
+    const { article_name, article_content, fk_class_id, fk_b2c_id } = req.body;
     const article_img = req.file ? req.file.filename : null;
+    const article_date = moment().format(dateFormat);
+
     console.log("Received data:", {
       article_name,
       article_content,
       fk_class_id,
+      fk_b2c_id,
       article_img,
-    }); // 记录接收到的数据
+    });
 
-    const article_date = moment().format(dateFormat);
-
-    if (!article_name || !article_content || !fk_class_id) {
+    if (!article_name || !article_content || !fk_class_id || !fk_b2c_id) {
       return res
         .status(400)
         .json({ success: false, error: "Missing required fields" });
     }
 
     const sql = `
-      INSERT INTO article (article_date, article_name, article_content, fk_class_id, article_img)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO article (article_date, article_name, article_content, fk_class_id, fk_b2c_id, article_img)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
     const values = [
       article_date,
       article_name,
       article_content,
       fk_class_id,
+      fk_b2c_id,
       article_img,
     ];
 
@@ -59,7 +61,7 @@ router.post("/add", upload.single("article_img"), async (req, res) => {
 
     res.json({ success: true, message: "Article added successfully" });
   } catch (error) {
-    console.error("Error adding article:", error); // 记录详细错误信息
+    console.error("Error adding article:", error);
     res.status(500).json({ success: false, error: "Failed to add article" });
   }
 });
