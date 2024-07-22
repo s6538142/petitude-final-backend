@@ -56,7 +56,7 @@ router.get("/counties", async (req, res) => {
   });
 
   // 處理保存保險訂單的邏輯
-router.post('/insurance/save-insurance-order', async (req, res) => {
+router.post('/save-insurance-order', async (req, res) => {
     try {
       const insuranceData = req.body;
       const sql = `
@@ -223,6 +223,10 @@ router.post('/insurance/save-insurance-order', async (req, res) => {
 //       }
 //     }
 //   });
+
+router.post('/test', (req, res) => {
+  res.json({ message: 'Server is running' });
+});
   
   export default router;
   
