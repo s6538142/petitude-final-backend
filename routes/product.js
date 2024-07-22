@@ -146,7 +146,63 @@ router.get("/cities/:countyId", async (req, res) => {
   }
 });
 
-// 結帳用路由
+// 收藏用路由
+router.post("/addFavorite", async (req, res) => {
+  try {
+    const { fk_b2c_id, fk_product_id } = req.body;
+
+    if (!fk_product_id || !fk_b2c_id) {
+      return res.status(400).json({ success: false, message: "缺少必要參數" });
+    }
+
+    // 檢查商品是否存在
+    const [product] = await db.query(
+      "SELECT * FROM product WHERE pk_product_id = ?",
+      [fk_product_id]
+    );
+
+    if (product.length === 0) {
+      return res.status(404).json({ success: false, message: "商品不存在" });
+    }
+
+    // 檢查用戶是否存在
+    const [user] = await db.query(
+      "SELECT * FROM b2c_members WHERE b2c_id = ?",
+      [fk_b2c_id]
+    );
+
+    if (user.length === 0) {
+      return res.status(404).json({ success: false, message: "用戶不存在" });
+    }
+
+    // 檢查是否已經收藏過
+    const [existing] = await db.query(
+      "SELECT * FROM product_favorite WHERE fk_b2c_id = ? AND fk_product_id = ? ",
+      [fk_b2c_id, fk_product_id]
+    );
+
+    if (existing.length > 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "已經收藏過此商品" });
+    }
+
+    // 插入新的收藏記錄
+    await db.query(
+      "INSERT INTO product_favorite (fk_b2c_id, fk_product_id) VALUES (?, ?)",
+      [fk_b2c_id, fk_product_id]
+    );
+
+    res.json({ success: true, message: "成功加入收藏" });
+  } catch (error) {
+    console.error("Error adding favorite:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "加入收藏失敗", error: error.message });
+  }
+});
+
+// 抓取會員資料
 router.get("/user/:b2c_id", async (req, res) => {
   try {
     const b2c_id = req.params.b2c_id;
@@ -166,6 +222,7 @@ router.get("/user/:b2c_id", async (req, res) => {
   }
 });
 
+// 結帳用路由
 router.post("/cartCheckout", async (req, res) => {
   let connection;
   try {
@@ -196,6 +253,7 @@ router.post("/cartCheckout", async (req, res) => {
     connection = await db.getConnection();
     await connection.beginTransaction();
 
+    // 獲取會員的 ID
     let b2cId;
     if (customerInfo.buyerName) {
       const [b2cResult] = await connection.query(
