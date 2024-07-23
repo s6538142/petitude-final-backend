@@ -135,6 +135,7 @@ const getListData = async (req) => {
     where += ` AND (a.\`article_name\` LIKE ${keyword_} OR a.\`article_content\` LIKE ${keyword_}) `;
   }
 
+  // 總筆數查詢
   const t_sql = `SELECT COUNT(1) totalRows FROM article a ${where}`;
   const [[{ totalRows }]] = await db.query(t_sql);
   let totalPages = 0;
@@ -145,8 +146,11 @@ const getListData = async (req) => {
       redirect = `?page=${totalPages}`;
       return { success, redirect };
     }
+
+    // 獲取文章及其留言數量
     const sql = `
-      SELECT a.*, c.class_name
+      SELECT a.*, c.class_name,
+        (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) AS message_count
       FROM article a
       JOIN class c ON a.fk_class_id = c.class_id
       ${where}
