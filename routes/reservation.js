@@ -111,24 +111,24 @@ router.get("/add", async (req, res) => {
 
 router.post("/add", async (req, res) => {
   let body = { ...req.body };
-  body.reservation_date = new Date();
+  // 使用前端發送的日期，如果沒有則使用當前日期
+  body.reservation_date = body.reservation_date || new Date();
 
   // 格式化日期
-  const m = moment(body.reservation_date, moment.ISO_8601);
+  const m = moment(body.reservation_date);
   body.reservation_date = m.isValid() ? m.format(dateFormat) : null;
 
-  // 根据 fk_b2c_id 获取 b2c_name
+  // 根據 fk_b2c_id 取得 b2c_name
   if (body.fk_b2c_id) {
     try {
-      // 使用正确的变量名 body.fk_b2c_id
       const [result] = await db.query(
         "SELECT b2c_name FROM b2c_members WHERE b2c_id = ?",
         [body.fk_b2c_id]
       );
       const b2cName = result[0]?.b2c_name || null;
-      body.b2c_name = b2cName; // 将 b2c_name 设置到要插入的记录中
+      body.b2c_name = b2cName; 
     } catch (error) {
-      console.error("Error fetching b2c_name:", error); // 记录错误
+      console.error("Error fetching b2c_name:", error); 
       return res.status(500).json({ error: "Error fetching b2c_name" });
     }
   }
