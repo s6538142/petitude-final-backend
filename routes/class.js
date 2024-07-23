@@ -56,4 +56,37 @@ router.get("/api", async (req, res) => {
   res.json(data);
 });
 
+const getArticleListByClass = async (req) => {
+  let success = false;
+  const { class_id } = req.params;
+
+  const sql = `
+    SELECT 
+      a.article_id,
+      a.article_date,
+      a.article_name,
+      a.article_content,
+      a.article_img,
+      a.views_count,
+      a.click_like
+    FROM article a
+    WHERE a.fk_class_id = ?
+  `;
+  const [rows] = await db.query(sql, [class_id]);
+
+  if (rows.length) {
+    success = true;
+  }
+
+  return {
+    success,
+    rows,
+  };
+};
+
+router.get("/articles/:class_id", async (req, res) => {
+  const data = await getArticleListByClass(req);
+  res.json(data);
+});
+
 export default router;
