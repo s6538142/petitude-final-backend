@@ -16,12 +16,14 @@ import cors from "cors";
 import bkRouter from "./routes/booking.js";
 import prRouter from "./routes/product.js";
 import paymentRouter from "./routes/ecpay.js";
+import insurancePayment from "./routes/ecpayJ.js";
 import pjRouter from "./routes/project.js";
 import rvRouter from "./routes/reservation.js";
 import memberRouter from "./routes/b2c_member.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -259,6 +261,7 @@ app.use("/ecpay", paymentRouter);
 
 // 寵物保險路由開始
 app.use("/insurance", insuranceRouter);
+app.use("/ecpayJ", insurancePayment)
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is running' });
 });
