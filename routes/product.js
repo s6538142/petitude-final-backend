@@ -335,4 +335,31 @@ router.post("/cartCheckout", async (req, res) => {
   }
 });
 
+// 抓取會員購買紀錄
+router.post("/request/:b2c_id", async (req, res) => {
+  try {
+    const b2c_id = req.params.b2c_id;
+    const [rows] = await db.query(
+      `SELECT r.*, rd.*
+        FROM request r
+        LEFT JOIN request_detail rd ON r.request_id = rd.fk_request_id
+        WHERE r.fk_b2c_id = ?
+        ORDER BY r.request_date DESC`,
+      [b2c_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No purchase records found for this user",
+      });
+    }
+
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Error fetching purchase records:", error);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
 export default router;
