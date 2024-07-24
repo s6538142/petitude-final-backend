@@ -141,24 +141,42 @@ router.post("/cartCheckout1", async (req, res) => {
 
     let projectId;
     if (customerInfo.projectName) {
-      const [projectResult] = await connection.query(
-        "SELECT project_id FROM project WHERE project_name = ?",
-        [customerInfo.projectName]
-      );
-      projectId = projectResult[0]?.project_id;
-      console.log("projectId:", projectId);
+      try {
+        const [projectResult] = await connection.query(
+          "SELECT project_id FROM project WHERE project_name = ?",
+          [customerInfo.projectName]
+        );
+        console.log("projectResult:", projectResult);
+
+        // 這邊有問題
+        if (projectResult.length > 0) {
+          projectId = projectResult[0]?.project_id;
+          console.log("projectId:", projectId);
+        } else {
+          console.log("No matching project found.");
+        }
+      } catch (error) {
+        console.error("Error querying project_id:", error);
+      }
     }
 
-    let stateId = 0; // 设定一个默认值
-    if (customerInfo.projectName) {
+    let stateId = 1; // 設默認值
+    if (customerInfo.stateName) {
       const [stateResult] = await connection.query(
         "SELECT booking_state FROM booking",
         [customerInfo.booking_state]
       );
-      stateId = stateResult[0]?.booking_state || 0; 
-      console.log("stateId:", stateId);
+      stateId = stateResult[0]?.booking_state || 0;
     }
 
+    let billNum = "AA00000040"; // 設默認值
+    if (customerInfo.billNumName) {
+      const [billNumResult] = await connection.query(
+        "SELECT billNumber FROM booking",
+        [customerInfo.billNumber]
+      );
+      billNum = billNumResult[0]?.billNumber || 0;
+    }
 
     // 計算總價
     const totalPrice = Array.isArray(cartItems)
@@ -171,9 +189,9 @@ router.post("/cartCheckout1", async (req, res) => {
     // 新增訂單資料表
     const [orderResult] = await connection.query(
       `INSERT INTO booking 
-  (fk_b2c_id, fk_project_id, booking_state, booking_price, booking_date) 
-  VALUES (?, ?, ?, ?, NOW())`,
-      [b2cId, projectId, stateId, totalPrice]
+  (fk_b2c_id, fk_project_id, booking_state, booking_price, billNumber, booking_date) 
+  VALUES (?, ?, ?, ?, ?, NOW())`,
+      [b2cId, projectId, stateId, totalPrice, billNum]
     );
     console.log("orderResult:", orderResult);
 
@@ -207,5 +225,6 @@ router.post("/cartCheckout1", async (req, res) => {
     }
   }
 });
+
 
 export default router;
