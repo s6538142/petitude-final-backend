@@ -56,6 +56,7 @@ router.get("/counties", async (req, res) => {
 
   // 建立新的保單
 router.post('/save-insurance-order', async (req, res) => {
+
     try {
       const insuranceData = req.body;
       const sql = `
