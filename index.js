@@ -12,6 +12,7 @@ import mysql_session from "express-mysql-session";
 import bcrypt from "bcrypt";
 import classRouter from "./routes/class.js";
 import articleRouter from "./routes/article.js";
+import messageRoutes from "./routes/message.js";
 import cors from "cors";
 import bkRouter from "./routes/booking.js";
 import prRouter from "./routes/product.js";
@@ -25,7 +26,7 @@ import { dirname } from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-import insuranceRouter from "./routes/insurance.js"
+import insuranceRouter from "./routes/insurance.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" }); // 初始化 Multer 以將上傳的檔案暫存到 tmp_uploads 資料夾
@@ -259,8 +260,8 @@ app.use("/ecpay", paymentRouter);
 
 // 寵物保險路由開始
 app.use("/insurance", insuranceRouter);
-app.get('/test', (req, res) => {
-  res.json({ message: 'Server is running' });
+app.get("/test", (req, res) => {
+  res.json({ message: "Server is running" });
 });
 // 寵物保險路由結束
 
@@ -274,6 +275,7 @@ app.use("/booking", bkRouter);
 //論壇路由開始
 app.use("/article", articleRouter);
 app.use("/class", classRouter);
+app.use("/message", messageRoutes);
 //論壇路由結束
 
 // ************
