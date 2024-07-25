@@ -95,17 +95,17 @@ router.post('/save-insurance-order', async (req, res) => {
           [insuranceData.fk_b2c_id]
         );
   
-        console.log('Latest order query result:', latestOrder); // 添加這行
+        console.log('Latest order query result:', latestOrder); 
   
         if (latestOrder && latestOrder.length > 0) {
           res.status(200).json({ 
             success: true,
             message: '保險訂單保存成功',
-            latestOrderId: latestOrder[0].insurance_order_id
+            OrderId: latestOrder[0].insurance_order_id            
           });
         } else {
           throw new Error('無法獲取最新訂單ID');
-        }
+        } 
       } else {
         throw new Error('保存保險訂單失敗');
       }
@@ -113,11 +113,32 @@ router.post('/save-insurance-order', async (req, res) => {
       console.error('保存保險訂單失敗:', error);
       res.status(500).json({ 
         success: false,
-        error: '保存失敗，請稍後再試', 
-        details: error.message 
+        message: '保存失敗，請稍後再試',
+        error: error.message 
       });
     }
   });
+
+  // 讀取保單資料
+  router.get('/read-insurance-order/:OrderId', async (req, res) => {
+    try {
+      const {OrderId} = req.params
+
+      const [rows] = await db.query(
+        'SELECT * FROM insurance_order WHERE insurance_order_id = ?',
+        [OrderId]
+      )
+
+      if (rows.length >0) {
+        res.json({success: true, data: rows[0]})
+      } else {
+        res.status(404).json({success: false, message:'找不到該訂單' })
+      }
+    } catch (error) {
+      console.error('讀取保單資料時發生錯誤:', error)
+      res.status(500).json({success: false, message:'伺服器錯誤' })
+    }
+  })
 
   // PUT 更新會員資料
 // app.put('/petcompany/b2c_members', async (req, res) => {
