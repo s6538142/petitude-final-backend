@@ -23,32 +23,34 @@ const upload = multer({ storage });
 
 router.post("/add", upload.single("article_img"), async (req, res) => {
   try {
-    const { article_name, article_content, fk_class_id } = req.body;
+    const { article_name, article_content, fk_class_id, fk_b2c_id } = req.body;
     const article_img = req.file ? req.file.filename : null;
+    const article_date = moment().format(dateFormat);
+
     console.log("Received data:", {
       article_name,
       article_content,
       fk_class_id,
+      fk_b2c_id,
       article_img,
-    }); // 记录接收到的数据
+    });
 
-    const article_date = moment().format(dateFormat);
-
-    if (!article_name || !article_content || !fk_class_id) {
+    if (!article_name || !article_content || !fk_class_id || !fk_b2c_id) {
       return res
         .status(400)
         .json({ success: false, error: "Missing required fields" });
     }
 
     const sql = `
-      INSERT INTO article (article_date, article_name, article_content, fk_class_id, article_img)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO article (article_date, article_name, article_content, fk_class_id, fk_b2c_id, article_img)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
     const values = [
       article_date,
       article_name,
       article_content,
       fk_class_id,
+      fk_b2c_id,
       article_img,
     ];
 
@@ -59,7 +61,7 @@ router.post("/add", upload.single("article_img"), async (req, res) => {
 
     res.json({ success: true, message: "Article added successfully" });
   } catch (error) {
-    console.error("Error adding article:", error); // 记录详细错误信息
+    console.error("Error adding article:", error);
     res.status(500).json({ success: false, error: "Failed to add article" });
   }
 });
@@ -119,7 +121,7 @@ const getListData = async (req) => {
   let success = false;
   let redirect = "";
 
-  const perPage = 25;
+  const perPage = 10; // 每頁加載10個項目
   let page = parseInt(req.query.page) || 1;
   if (page < 1) {
     redirect = "?page=1";
@@ -133,6 +135,7 @@ const getListData = async (req) => {
     where += ` AND (a.\`article_name\` LIKE ${keyword_} OR a.\`article_content\` LIKE ${keyword_}) `;
   }
 
+  // 總筆數查詢
   const t_sql = `SELECT COUNT(1) totalRows FROM article a ${where}`;
   const [[{ totalRows }]] = await db.query(t_sql);
   let totalPages = 0;
@@ -143,8 +146,11 @@ const getListData = async (req) => {
       redirect = `?page=${totalPages}`;
       return { success, redirect };
     }
+
+    // 獲取文章及其留言數量
     const sql = `
-      SELECT a.*, c.class_name
+      SELECT a.*, c.class_name,
+        (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) AS message_count
       FROM article a
       JOIN class c ON a.fk_class_id = c.class_id
       ${where}
@@ -202,31 +208,39 @@ router.get("/article_page/:article_id", async (req, res) => {
 });
 
 // 處理編輯的表單
-router.put("/api/:article_id", upload.none(), async (req, res) => {
-  const output = {
-    success: false,
-    code: 0,
-    result: {},
-  };
+router.put(
+  "/api/:article_id",
+  upload.single("article_img"),
+  async (req, res) => {
+    const output = {
+      success: false,
+      code: 0,
+      result: {},
+    };
 
-  const article_id = +req.params.article_id || 0;
-  if (!article_id) {
-    return res.json(output);
+    const article_id = +req.params.article_id || 0;
+    if (!article_id) {
+      return res.json(output);
+    }
+
+    let body = { ...req.body };
+    const article_img = req.file ? req.file.filename : null;
+
+    if (article_img) {
+      body.article_img = article_img;
+    }
+
+    try {
+      const sql = "UPDATE `article` SET ? WHERE article_id=? ";
+      const [result] = await db.query(sql, [body, article_id]);
+      output.result = result;
+      output.success = !!(result.affectedRows && result.changedRows);
+    } catch (ex) {
+      output.error = ex;
+    }
+
+    res.json(output);
   }
-
-  let body = { ...req.body };
-
-  try {
-    const sql = "UPDATE `article` SET ? WHERE article_id=? ";
-
-    const [result] = await db.query(sql, [body, article_id]);
-    output.result = result;
-    output.success = !!(result.affectedRows && result.changedRows);
-  } catch (ex) {
-    output.error = ex;
-  }
-
-  res.json(output);
-});
+);
 
 export default router;
