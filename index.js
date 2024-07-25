@@ -17,6 +17,7 @@ import cors from "cors";
 import bkRouter from "./routes/booking.js";
 import prRouter from "./routes/product.js";
 import paymentRouter from "./routes/ecpay.js";
+import insurancePayment from "./routes/ecpayJ.js";
 import pjRouter from "./routes/project.js";
 import rvRouter from "./routes/reservation.js";
 import paymentRouter1 from "./routes/ecpay1.js";
@@ -25,12 +26,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import insuranceRouter from "./routes/insurance.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" }); // 初始化 Multer 以將上傳的檔案暫存到 tmp_uploads 資料夾
+
 
 const app = express(); // 創建 Express 應用實例
 
@@ -51,6 +54,16 @@ const corsOptions = {
     cb(null, true); // 設定 CORS 選項，允許所有來源
   },
 };
+
+// TEST
+// const corsOptions = {
+//   origin: [
+//     '*',
+//   ],
+//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+// };
+
 app.use(cors(corsOptions)); // 使用 CORS 中介軟體
 
 const MysqlStore = mysql_session(session); // 創建 MySQL session 存儲
@@ -261,8 +274,16 @@ app.use("/ecpay", paymentRouter);
 
 // 寵物保險路由開始
 app.use("/insurance", insuranceRouter);
-app.get("/test", (req, res) => {
-  res.json({ message: "Server is running" });
+app.use("/ecpayJ", insurancePayment)
+// 增加上傳資料容量
+// app.use(express.json({ limit: '100mb' }));
+// app.use(express.urlencoded({ limit: '100mb', extended: true }));
+// app.post('/upload-endpoint', upload.single('file'), (req, res) => {
+//   res.json({ message: 'File uploaded successfully', file: req.file });
+// });
+
+app.get('/test', (req, res) => {
+  res.json({ message: 'Server is running' });
 });
 // 寵物保險路由結束
 
