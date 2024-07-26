@@ -63,9 +63,9 @@ router.post('/save-insurance-order', async (req, res) => {
       INSERT INTO insurance_order (
         fk_b2c_id, insurance_start_date, fk_county_id, fk_city_id,  
         policyholder_address, policyholder_mobile, policyholder_email, policyholder_IDcard, 
-        policyholder_birthday, b2c_name, pet_name, pet_chip, insurance_product, insurance_premium,
+        policyholder_birthday, b2c_name, pet_name, pet_chip, insurance_product, insurance_premium, payment_status,
          pet_pic
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '未付款', ?)
     `;
 
     const values = [
@@ -73,8 +73,8 @@ router.post('/save-insurance-order', async (req, res) => {
         insuranceData.insurance_start_date,
         insuranceData.fk_county_id,
         insuranceData.fk_city_id,
-        insuranceData.fk_policyholder_address,
-        insuranceData.fk_policyholder_mobile,
+        insuranceData.policyholder_address,
+        insuranceData.policyholder_mobile,
         insuranceData.fk_policyholder_email,
         insuranceData.policyholder_IDcard,
         insuranceData.policyholder_birthday,
@@ -140,24 +140,49 @@ router.post('/save-insurance-order', async (req, res) => {
     }
   })
 
-  // PUT 更新會員資料
-// app.put('/petcompany/b2c_members', async (req, res) => {
-//     const { fk_policyholder_email, fk_policyholder_mobile, fk_county_id, fk_city_id, fk_policyholder_address } = req.body;
+  // PUT 更新訂單付款狀態
+router.put('/update-insurance-order', async (req, res) => {
+    
+  let { OrderId, payment_status } = req.body;
   
-//     try {
-//       const connection = await mysql.createConnection(dbConfig);
-//       await connection.execute(
-//         'UPDATE b2c_members SET fk_policyholder_email = ?, fk_policyholder_mobile = ?, fk_county_id = ?, fk_city_id = ?, fk_policyholder_address = ? WHERE id = ?',
-//         [fk_policyholder_email, fk_policyholder_mobile, fk_county_id, fk_city_id, fk_policyholder_address, 1] // 假設 ID 為 1
-//       );
-//       await connection.end();
+    if (!OrderId || !payment_status) {
+      return res.status(400).json({ message: '缺少必要參數'})
+    }
+
+    // OrderId 是字符串形式的 JSON 對象，解析它
+    if (typeof OrderId === 'string' && OrderId.startsWith('{')) {
+      try {
+        const parsedObject = JSON.parse(OrderId);
+        OrderId = parsedObject.OrderId;
+      } catch (error) {
+        console.error('解析 OrderId 時出錯:', error);
+        return res.status(400).json({ message: 'OrderId 格式不正確' });
+      }
+    }
+
+    // 確保 OrderId 是數字
+    const parsedOrderId = parseInt(OrderId, 10);
+    if (isNaN(parsedOrderId)) {
+      return res.status(400).json({ message: 'OrderId 必須是有效的數字' });
+    }
   
-//       res.json({ message: '會員資料更新成功' });
-//     } catch (error) {
-//       console.error('更新會員資料失敗:', error);
-//       res.status(500).json({ message: '更新會員資料時發生錯誤' });
-//     }
-//   });
+    try {
+      const [result] = await db.query(
+        'UPDATE insurance_order SET payment_status = ? WHERE insurance_order_id = ?',
+        [payment_status, parsedOrderId] 
+      );
+
+      if (result.affectedRows >0){  
+      res.json({ message: '訂單支付狀態更新成功' });
+    } else {
+      res.status(404).json({ message: '未找到指定的訂單' });
+    } 
+  } catch (error) {
+      console.error('更新訂單支付狀態失敗:', error);
+      res.status(500).json({ message: '更新訂單支付狀態時發生錯誤', error: error.message,
+        stack: error.stack });
+    }
+  });
 
 
 
