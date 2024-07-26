@@ -1,7 +1,7 @@
 import express from "express";
 import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
-import upload from "../utils/upload-imgs.js";
+import upload from "../utils/upload-avatar.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendResetPasswordEmail } from '../utils/send-email.js';
@@ -170,7 +170,8 @@ router.post('/request-password-reset', async (req, res) => {
 
     const user = rows[0];
     const resetCode = crypto.randomInt(100000, 999999).toString(); // 生成六位數驗證碼
-    const expireTime = moment().add(1, 'hour').format('YYYY-MM-DD HH:mm:ss');
+    const expireTime = moment().add(5, 'minutes').format('YYYY-MM-DD HH:mm:ss');
+
 
     // 更新數據庫中的驗證碼和過期時間
     await db.query('UPDATE b2c_members SET reset_code = ?, reset_code_expire = ? WHERE b2c_id = ?', [resetCode, expireTime, user.b2c_id]);
@@ -178,7 +179,7 @@ router.post('/request-password-reset', async (req, res) => {
     // 生成郵件內容
     const emailContent = `
       <p>您的重設密碼驗證碼是 <strong>${resetCode}</strong>。</p>
-      <p>請在接下來的 1 小時內輸入這個驗證碼。</p>
+      <p>請在接下來的 5 分鐘內輸入這個驗證碼。</p>
     `;
     await sendResetPasswordEmail(email, '密碼重設驗證碼', emailContent);
 
@@ -238,6 +239,29 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+
+// 處理大頭貼上傳
+export const uploadAvatar = async (b2c_id, avatarBase64) => {
+  try {
+    const response = await fetch(getUploadAvatarUrl(b2c_id), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ b2c_avatar: avatarBase64 }), // 修改為 b2c_avatar
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || '上傳失敗');
+    }
+
+    return result.data; // 返回圖片的 URL 或其他信息
+  } catch (error) {
+    console.error('上傳大頭貼時發生錯誤:', error);
+    throw error;
+  }
+};
 
 
 export default router;
