@@ -38,4 +38,24 @@ router.post("/add", (req, res) => {
   );
 });
 
+router.post("/re_message/add", (req, res) => {
+  const { re_message_content, re_message_date, fk_message_id, fk_b2c_id } =
+    req.body;
+
+  const sql =
+    "INSERT INTO re_message (re_message_content, re_message_date, fk_message_id, fk_b2c_id) VALUES (?, ?, ?, ?)";
+
+  db.query(
+    sql,
+    [re_message_content, re_message_date, fk_message_id, fk_b2c_id],
+    (err, result) => {
+      if (err) {
+        res.status(500).send({ success: false, message: "回覆留言添加失敗" });
+        return;
+      }
+      res.send({ success: true, re_message_id: result.insertId });
+    }
+  );
+});
+
 export default router;
