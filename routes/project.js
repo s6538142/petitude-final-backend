@@ -126,16 +126,24 @@ router.post("/cartCheckout1", async (req, res) => {
       b2cId = b2cResult[0]?.b2c_id;
     }
 
-    let stateId = 1; // 設默認值
-    if (customerInfo.stateName) {
-      const [stateResult] = await connection.query(
-        "SELECT booking_state FROM booking",
-        [customerInfo.booking_state]
-      );
-      stateId = stateResult[0]?.booking_state || 0;
-    }
+const stateMapping = {
+  0: "未付款",
+  1: "已付款",
+  2: "已取消",
 
-    let billNum = "AA00000040"; // 設默認值
+};
+
+     let stateId = 1; 
+     if (customerInfo.stateName) {
+       const [stateResult] = await connection.query(
+         "SELECT booking_state FROM booking WHERE booking_state = ?",
+         [customerInfo.booking_state]
+       );
+       stateId = stateResult[0]?.booking_state || 0;
+     }
+
+     const stateText = stateMapping[stateId] || "未知状态";
+    let billNum = "AA00000040"; 
     if (customerInfo.billNumName) {
       const [billNumResult] = await connection.query(
         "SELECT billNumber FROM booking",
@@ -157,7 +165,7 @@ router.post("/cartCheckout1", async (req, res) => {
       `INSERT INTO booking 
   (fk_b2c_id, fk_project_id, booking_state, booking_price, billNumber, booking_date) 
   VALUES (?, ?, ?, ?, ?, NOW())`,
-      [b2cId, cartItems[0].project_id, stateId, totalPrice, billNum]
+      [b2cId, cartItems[0].project_id, stateText, totalPrice, billNum]
     );
     console.log("orderResult:", orderResult);
   
@@ -176,7 +184,7 @@ router.post("/cartCheckout1", async (req, res) => {
 
     res.json({ success: true, message: "訂單已成功創建" });
   } catch (error) {
-    // 如果出錯
+
     if (connection) {
       await connection.rollback();
     }
