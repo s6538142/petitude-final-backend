@@ -58,55 +58,35 @@ router.post("/re_message/add", (req, res) => {
   );
 });
 
-router.get("/:article_id", (req, res) => {
-  const articleId = req.params.article_id;
+router.get("/re_message/:message_id/replies", async (req, res) => {
+  const { message_id } = req.params;
+  console.log("Message ID:", message_id);
 
-  const articleQuery = "SELECT * FROM article WHERE article_id = ?";
-  const messageQuery = "SELECT * FROM message WHERE fk_article_id = ?";
-  const reMessageQuery = `
-    SELECT rm.*, bm.b2c_name, rm.fk_message_id
-    FROM re_message rm
-    JOIN b2c_members bm ON rm.fk_b2c_id = bm.b2c_id
-    WHERE rm.fk_message_id IN (SELECT message_id FROM message WHERE fk_article_id = ?)
-  `;
+  try {
+    // 更新的 SQL 查詢，包括 JOIN 操作
+    const [replies] = await db.execute(
+      `SELECT 
+        re.re_message_id,
+        re.re_message_content,
+        re.re_message_date,
+        re.re_message_img,
+        b.b2c_name
+       FROM 
+        re_message re
+       JOIN 
+        b2c_members b ON re.fk_b2c_id = b.b2c_id
+       WHERE 
+        re.fk_message_id = ?
+       ORDER BY 
+        re.re_message_date`,
+      [message_id]
+    );
 
-  db.query(articleQuery, [articleId], (err, articleResult) => {
-    if (err) {
-      res.status(500).send({ success: false, message: "獲取文章失敗" });
-      return;
-    }
-
-    db.query(messageQuery, [articleId], (err, messageResult) => {
-      if (err) {
-        res.status(500).send({ success: false, message: "獲取留言失敗" });
-        return;
-      }
-
-      db.query(reMessageQuery, [articleId], (err, reMessageResult) => {
-        if (err) {
-          res.status(500).send({ success: false, message: "獲取回覆留言失敗" });
-          return;
-        }
-
-        // 合并reMessage到message中
-        const messagesWithReMessages = messageResult.map((message) => {
-          const reMessages = reMessageResult.filter(
-            (reMessage) => reMessage.fk_message_id === message.message_id
-          );
-          return {
-            ...message,
-            reMessages,
-          };
-        });
-
-        res.send({
-          success: true,
-          article: articleResult[0],
-          messages: messagesWithReMessages,
-        });
-      });
-    });
-  });
+    res.json(replies);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
 });
 
 export default router;
