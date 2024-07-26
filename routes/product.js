@@ -147,6 +147,53 @@ router.get("/cities/:countyId", async (req, res) => {
 });
 
 // 收藏用路由
+router.post("/checkFavorite", async (req, res) => {
+  try {
+    const { fk_b2c_id, fk_product_id } = req.body;
+
+    if (!fk_product_id || !fk_b2c_id) {
+      return res.status(400).json({ success: false, message: "缺少必要參數" });
+    }
+
+    // 檢查商品是否存在
+    const [product] = await db.query(
+      "SELECT * FROM product WHERE pk_product_id = ?",
+      [fk_product_id]
+    );
+
+    if (product.length === 0) {
+      return res.status(404).json({ success: false, message: "商品不存在" });
+    }
+
+    // 檢查用戶是否存在
+    const [user] = await db.query(
+      "SELECT * FROM b2c_members WHERE b2c_id = ?",
+      [fk_b2c_id]
+    );
+
+    if (user.length === 0) {
+      return res.status(404).json({ success: false, message: "用戶不存在" });
+    }
+
+    // 檢查是否已經收藏過
+    const [existing] = await db.query(
+      "SELECT * FROM product_favorite WHERE fk_b2c_id = ? AND fk_product_id = ?",
+      [fk_b2c_id, fk_product_id]
+    );
+
+    const isFavorite = existing.length > 0;
+
+    res.json({ success: true, isFavorite });
+  } catch (error) {
+    console.error("Error checking favorite:", error);
+    res.status(500).json({
+      success: false,
+      message: "檢查收藏狀態失敗",
+      error: error.message,
+    });
+  }
+});
+
 router.post("/addFavorite", async (req, res) => {
   try {
     const { fk_b2c_id, fk_product_id } = req.body;
