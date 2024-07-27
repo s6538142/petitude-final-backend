@@ -11,66 +11,13 @@ const router = express.Router();
 
 const formatDate = (date) => moment(date).format(dateFormat);
 
-const getListData = async (req) => {
-  let success = false;
-  let redirect = "";
-
-  const perPage = 25; // 每頁最多有幾筆資料
-  let page = parseInt(req.query.page) || 1; // 從 query string 取得 page 的值
-  if (page < 1) {
-    redirect = "?page=1";
-    return { success, redirect };
-  }
-
-  let keyword = req.query.keyword || "";
-  let birth_begin = req.query.birth_begin || "";
-  let birth_end = req.query.birth_end || "";
-
-  let where = " WHERE 1 ";
-  if (keyword) {
-    const keyword_ = db.escape(`%${keyword}%`);
-    where += ` AND ( \`b2c_name\` LIKE ${keyword_} OR \`b2c_mobile\` LIKE ${keyword_} ) `;
-  }
-
-
-  const t_sql = `SELECT COUNT(1) totalRows FROM b2c_members ${where}`;
-  console.log(t_sql);
-  const [[{ totalRows }]] = await db.query(t_sql);
-  let totalPages = 0; // 總頁數, 預設值
-  let rows = []; // 分頁資料
-  if (totalRows) {
-    totalPages = Math.ceil(totalRows / perPage);
-    if (page > totalPages) {
-      redirect = `?page=${totalPages}`;
-      return { success, redirect };
-    }
-    // 取得分頁資料
-    const sql = `SELECT * FROM \`b2c_members\` ${where} ORDER BY b2c_id DESC LIMIT ${
-      (page - 1) * perPage
-    },${perPage}`;
-    console.log(sql);
-    [rows] = await db.query(sql);
-
-  }
-  success = true;
-  return {
-    success,
-    perPage,
-    page,
-    totalRows,
-    totalPages,
-    rows,
-    qs: req.query,
-  };
-};
-
 router.get("/api", async (req, res) => {
   const data = await getListData(req);
   res.json(data);
 });
 
 
-
+// 處理註冊會員
 router.post("/add", async (req, res) => {
   let body = { ...req.body };
 
@@ -104,7 +51,7 @@ router.post("/add", async (req, res) => {
   }
 });
 
-// 更新 GET 請求處理函數
+// 取得會員資料
 router.get("/api/:b2c_id", async (req, res) => {
   const b2c_id = +req.params.b2c_id || 0;
   if (!b2c_id) {
@@ -262,6 +209,65 @@ export const uploadAvatar = async (b2c_id, avatarBase64) => {
     throw error;
   }
 };
+
+// 取得保險紀錄
+
+router.get("/insurancerecords/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM insurance_order WHERE fk_b2c_id=${b2c_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  const row = rows[0];
+
+  res.json({ success: true, data: row });
+});
+
+// 取得生命禮儀紀錄
+
+router.get("/lifeceremonyrecords/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM  WHERE fk_b2c_id=${b2c_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  const row = rows[0];
+
+  res.json({ success: true, data: row });
+});
+
+
+
+// 取得購物紀錄
+
+router.get("/productrecords/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM  WHERE fk_b2c_id=${b2c_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  const row = rows[0];
+
+  res.json({ success: true, data: row });
+});
 
 
 export default router;
