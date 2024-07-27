@@ -275,13 +275,6 @@ app.use("/ecpay", paymentRouter);
 // 寵物保險路由開始
 app.use("/insurance", insuranceRouter);
 app.use("/ecpayJ", insurancePayment)
-// 增加上傳資料容量
-// app.use(express.json({ limit: '100mb' }));
-// app.use(express.urlencoded({ limit: '100mb', extended: true }));
-// app.post('/upload-endpoint', upload.single('file'), (req, res) => {
-//   res.json({ message: 'File uploaded successfully', file: req.file });
-// });
-
 app.get('/test', (req, res) => {
   res.json({ message: 'Server is running' });
 });

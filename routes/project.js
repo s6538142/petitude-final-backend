@@ -2,7 +2,6 @@ import express from "express";
 import cors from "cors";
 import db from "./../utils/connect-mysql.js";
 
-
 const router = express.Router();
 
 // 添加 CORS
@@ -58,7 +57,6 @@ const getListData = async (req) => {
   }
 };
 
-
 router.get("/", async (req, res) => {
   try {
     res.locals.title = "契約列表" + res.locals.title;
@@ -74,24 +72,13 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.get("/api/:project_id", async (req, res) => {
+router.get("/project", async (req, res) => {
   try {
-    const project_id = +req.params.project_id || 0;
-    if (!project_id) {
-      return res.status(400).json({ success: false, error: "沒有編號" });
-    }
-
-    const sql = `SELECT * FROM project WHERE project_id=?`;
-    const [rows] = await db.query(sql, [project_id]);
-
-    if (!rows.length) {
-      return res.status(404).json({ success: false, error: "沒有該筆資料" });
-    }
-
-    res.json({ success: true, data: rows[0] });
+    const [rows] = await db.query("SELECT * FROM project ORDER BY project_id");
+    res.json({ success: true, data: rows });
   } catch (error) {
-    console.error("Error in single project route:", error);
-    res.status(500).json({ success: false, error: "Server error" });
+    console.error("Error fetching project:", error);
+    res.status(500).json({ success: false, error: "無法獲取契約資料" });
   }
 });
 
@@ -139,37 +126,24 @@ router.post("/cartCheckout1", async (req, res) => {
       b2cId = b2cResult[0]?.b2c_id;
     }
 
-    let projectId;
-    if (customerInfo.projectName) {
-      try {
-        const [projectResult] = await connection.query(
-          "SELECT project_id FROM project WHERE project_name = ?",
-          [customerInfo.projectName]
-        );
-        console.log("projectResult:", projectResult);
+const stateMapping = {
+  0: "未付款",
+  1: "已付款",
+  2: "已取消",
 
-        // 這邊有問題
-        if (projectResult.length > 0) {
-          projectId = projectResult[0]?.project_id;
-          console.log("projectId:", projectId);
-        } else {
-          console.log("No matching project found.");
-        }
-      } catch (error) {
-        console.error("Error querying project_id:", error);
-      }
-    }
+};
 
-    let stateId = 1; // 設默認值
-    if (customerInfo.stateName) {
-      const [stateResult] = await connection.query(
-        "SELECT booking_state FROM booking",
-        [customerInfo.booking_state]
-      );
-      stateId = stateResult[0]?.booking_state || 0;
-    }
+     let stateId = 1; 
+     if (customerInfo.stateName) {
+       const [stateResult] = await connection.query(
+         "SELECT booking_state FROM booking WHERE booking_state = ?",
+         [customerInfo.booking_state]
+       );
+       stateId = stateResult[0]?.booking_state || 0;
+     }
 
-    let billNum = "AA00000040"; // 設默認值
+     const stateText = stateMapping[stateId] || "未知状态";
+    let billNum = "AA00000040"; 
     if (customerInfo.billNumName) {
       const [billNumResult] = await connection.query(
         "SELECT billNumber FROM booking",
@@ -191,12 +165,11 @@ router.post("/cartCheckout1", async (req, res) => {
       `INSERT INTO booking 
   (fk_b2c_id, fk_project_id, booking_state, booking_price, billNumber, booking_date) 
   VALUES (?, ?, ?, ?, ?, NOW())`,
-      [b2cId, projectId, stateId, totalPrice, billNum]
+      [b2cId, cartItems[0].project_id, stateText, totalPrice, billNum]
     );
     console.log("orderResult:", orderResult);
-
+  
     const orderId = orderResult.insertId;
-    console.log("orderId:", orderId);
 
     // 新增訂單詳情
     for (const item of cartItems) {
@@ -211,7 +184,7 @@ router.post("/cartCheckout1", async (req, res) => {
 
     res.json({ success: true, message: "訂單已成功創建" });
   } catch (error) {
-    // 如果出錯
+
     if (connection) {
       await connection.rollback();
     }
@@ -225,6 +198,5 @@ router.post("/cartCheckout1", async (req, res) => {
     }
   }
 });
-
 
 export default router;
