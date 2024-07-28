@@ -131,11 +131,11 @@ router.post("/cartCheckout1", async (req, res) => {
       0: "未付款",
       1: "已付款",
     };
-     const projectMapping= {
-       1: "溫馨寵物 -個別羽化",
-       2: "尊榮寵物 - 個別羽化",
-       3: "朋友寵物 -集體羽化",
-     };
+    const projectMapping= {
+      1: "溫馨寵物 -個別羽化",
+      2: "尊榮寵物 - 個別羽化",
+      3: "朋友寵物 -集體羽化",
+    };
     const reverseStateMapping = {
       0: "未付款",
       1: "已付款",
@@ -161,12 +161,12 @@ router.post("/cartCheckout1", async (req, res) => {
 // project
         let projectId = projectMapping["已付款"];
 
-    if (customerInfo.stateName) {
-      stateId = projectMapping[customerInfo.stateName] || 0; 
+    if (customerInfo.projectName) {
+      projectId = projectMapping[customerInfo.projectName] || 0; 
     }
 
     if (typeof projectId !== "number" || isNaN(projectId)) {
-      stateId = 1; 
+      projectId = 1; 
     }
     console.log("projectId:", projectId); 
     const projectText = reverseProjectMapping[projectId];
