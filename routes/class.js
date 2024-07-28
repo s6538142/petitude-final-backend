@@ -59,25 +59,40 @@ router.get("/api", async (req, res) => {
 const getArticleListByClass = async (req) => {
   let success = false;
   const { class_id } = req.params;
+  console.log(`Received class_id: ${class_id}`);
   const page = parseInt(req.query.page) || 1;
   const perPage = 10;
   const offset = (page - 1) * perPage;
 
-  const sql = `
-    SELECT 
-      a.article_id,
-      a.article_date,
-      a.article_name,
-      a.article_content,
-      a.article_img,
-      a.views_count,
-      a.click_like,
-      (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) AS message_count
-    FROM article a
-    WHERE a.fk_class_id = ?
-    LIMIT ? OFFSET ?
+  const t_sql = `
+    SELECT COUNT(1) totalRows 
+    FROM article 
+    WHERE fk_class_id = ?
   `;
-  const [rows] = await db.query(sql, [class_id, perPage, offset]);
+  console.log(t_sql, [class_id]);
+  const [[{ totalRows }]] = await db.query(t_sql, [class_id]);
+
+  let totalPages = 0; // 總頁數, 預設值
+  let rows = []; // 分頁資料
+  if (totalRows) {
+    totalPages = Math.ceil(totalRows / perPage);
+    const sql = `
+      SELECT 
+        a.article_id,
+        a.article_date,
+        a.article_name,
+        a.article_content,
+        a.article_img,
+        a.views_count,
+        a.click_like,
+        (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) AS message_count
+      FROM article a
+      WHERE a.fk_class_id = ?
+      LIMIT ? OFFSET ?
+    `;
+    console.log(sql, [class_id, perPage, offset]);
+    [rows] = await db.query(sql, [class_id, perPage, offset]);
+  }
 
   if (rows.length) {
     success = true;
@@ -85,6 +100,10 @@ const getArticleListByClass = async (req) => {
 
   return {
     success,
+    totalRows,
+    totalPages,
+    page,
+    perPage,
     rows,
   };
 };
@@ -93,4 +112,5 @@ router.get("/filter/:class_id", async (req, res) => {
   const data = await getArticleListByClass(req);
   res.json(data);
 });
+
 export default router;
