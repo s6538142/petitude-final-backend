@@ -201,4 +201,66 @@ router.post('/avatar', async (req, res) => {
   }
 });
 
+// 取得保險紀錄
+
+router.get("/insurancerecords/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM insurance_order WHERE fk_b2c_id=${b2c_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  const row = rows[0];
+
+  res.json({ success: true, data: row });
+});
+
+// 取得購物紀錄
+router.get("/productrecords/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM request WHERE fk_b2c_id=${b2c_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  res.json({ success: true, data: rows }); // 修改此行，返回數組 rows
+});
+
+
+// 取得訂單細項
+router.get("/productrecords_detail/:request_id", async (req, res) => {
+  const request_id = +req.params.request_id || 0;
+  if (!request_id) {
+    return res.json({ success: false, error: "沒有訂單編號" });
+  }
+
+  // 查詢訂單細節
+  const sql = `
+    SELECT rd.request_detail_id, rd.purchase_quantity, rd.purchase_price, p.product_name
+    FROM request_detail as rd
+    JOIN product as p ON rd.fk_product_id = p.pk_product_id
+    WHERE rd.fk_request_id = ?
+  `;
+
+  const [rows] = await db.query(sql, [request_id]);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該訂單的細節" });
+  }
+
+  res.json({ success: true, data: rows });
+});
+
+
+
+
 export default router;
