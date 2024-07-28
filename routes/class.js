@@ -92,10 +92,20 @@ const getArticleListByClass = async (req) => {
           a.views_count,
           a.click_like,
           c.class_name,
-          (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) AS message_count
+          (
+            SELECT COUNT(*) 
+            FROM message m 
+            WHERE m.fk_article_id = a.article_id
+          ) + (
+            SELECT COUNT(*) 
+            FROM re_message rm 
+            JOIN message m ON rm.fk_message_id = m.message_id 
+            WHERE m.fk_article_id = a.article_id
+          ) AS message_count
         FROM article a
         JOIN class c ON a.fk_class_id = c.class_id
         WHERE a.fk_class_id = ?
+        ORDER BY a.article_id DESC
         LIMIT ? OFFSET ?
       `;
       console.log(sql, [class_id, perPage, offset]);
