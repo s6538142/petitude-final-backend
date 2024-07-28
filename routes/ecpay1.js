@@ -23,7 +23,7 @@ router.get("/", function (req, res, next) {
   const TradeDesc = "線上付款";
   const ItemName = "Petitude Company - 生前契約";
   const ReturnURL = "http://localhost:3001/ecpay/payment-result";
-  const OrderResultURL = "http://localhost:3000/funeral/"; //前端成功頁面
+  const OrderResultURL = "http://localhost:3000/funeral/funeral/success1"; //前端成功頁面
   const ChoosePayment = "ALL";
 
   ////////////////////////以下參數不用改////////////////////////

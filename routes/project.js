@@ -126,24 +126,54 @@ router.post("/cartCheckout1", async (req, res) => {
       b2cId = b2cResult[0]?.b2c_id;
     }
 
-const stateMapping = {
-  0: "未付款",
-  1: "已付款",
-  2: "已取消",
 
-};
+    const stateMapping = {
+      0: "未付款",
+      1: "已付款",
+    };
+    const projectMapping= {
+      1: "溫馨寵物 -個別羽化",
+      2: "尊榮寵物 - 個別羽化",
+      3: "朋友寵物 -集體羽化",
+    };
+    const reverseStateMapping = {
+      0: "未付款",
+      1: "已付款",
+    }; 
+    const reverseProjectMapping = {
+      1: "溫馨寵物 -個別羽化",
+      2: "尊榮寵物 - 個別羽化",
+      3: "朋友寵物 -集體羽化",
+    };
+// state
+    let stateId = stateMapping["已付款"];
 
-     let stateId = 1; 
-     if (customerInfo.stateName) {
-       const [stateResult] = await connection.query(
-         "SELECT booking_state FROM booking WHERE booking_state = ?",
-         [customerInfo.booking_state]
-       );
-       stateId = stateResult[0]?.booking_state || 0;
-     }
+    if (customerInfo.stateName) {
+      stateId = stateMapping[customerInfo.stateName] || 0; 
+    }
 
-     const stateText = stateMapping[stateId] || "未知状态";
-    let billNum = "AA00000040"; 
+    if (typeof stateId !== "number" || isNaN(stateId)) {
+      stateId = 1; 
+    }
+    console.log("stateId:", stateId); 
+    const stateText = reverseStateMapping[stateId];
+    console.log("stateText:", stateText); 
+// project
+        let projectId = projectMapping["已付款"];
+
+    if (customerInfo.projectName) {
+      projectId = projectMapping[customerInfo.projectName] || 0; 
+    }
+
+    if (typeof projectId !== "number" || isNaN(projectId)) {
+      projectId = 1; 
+    }
+    console.log("projectId:", projectId); 
+    const projectText = reverseProjectMapping[projectId];
+    console.log("projectText:", projectText); 
+
+
+    let billNum = "AA00000040";
     if (customerInfo.billNumName) {
       const [billNumResult] = await connection.query(
         "SELECT billNumber FROM booking",
@@ -165,10 +195,10 @@ const stateMapping = {
       `INSERT INTO booking 
   (fk_b2c_id, fk_project_id, booking_state, booking_price, billNumber, booking_date) 
   VALUES (?, ?, ?, ?, ?, NOW())`,
-      [b2cId, cartItems[0].project_id, stateText, totalPrice, billNum]
+      [b2cId, cartItems[0].project_id, stateId, totalPrice, billNum]
     );
     console.log("orderResult:", orderResult);
-  
+
     const orderId = orderResult.insertId;
 
     // 新增訂單詳情
