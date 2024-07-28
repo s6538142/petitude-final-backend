@@ -59,6 +59,9 @@ router.get("/api", async (req, res) => {
 const getArticleListByClass = async (req) => {
   let success = false;
   const { class_id } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const perPage = 10;
+  const offset = (page - 1) * perPage;
 
   const sql = `
     SELECT 
@@ -68,11 +71,13 @@ const getArticleListByClass = async (req) => {
       a.article_content,
       a.article_img,
       a.views_count,
-      a.click_like
+      a.click_like,
+      (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) AS message_count
     FROM article a
     WHERE a.fk_class_id = ?
+    LIMIT ? OFFSET ?
   `;
-  const [rows] = await db.query(sql, [class_id]);
+  const [rows] = await db.query(sql, [class_id, perPage, offset]);
 
   if (rows.length) {
     success = true;
@@ -84,9 +89,8 @@ const getArticleListByClass = async (req) => {
   };
 };
 
-router.get("/articles/:class_id", async (req, res) => {
+router.get("/filter/:class_id", async (req, res) => {
   const data = await getArticleListByClass(req);
   res.json(data);
 });
-
 export default router;
