@@ -1,7 +1,6 @@
 import express from "express";
 import moment from "moment-timezone";
 import db from "../utils/connect-mysql.js";
-import upload from "../utils/upload-avatar.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { sendResetPasswordEmail } from '../utils/send-email.js';
@@ -15,7 +14,6 @@ router.get("/api", async (req, res) => {
   const data = await getListData(req);
   res.json(data);
 });
-
 
 // 處理註冊會員
 router.post("/add", async (req, res) => {
@@ -70,7 +68,7 @@ router.get("/api/:b2c_id", async (req, res) => {
 });
 
 // 更新 PUT 請求處理函數
-router.put("/api/:b2c_id", upload.none(), async (req, res) => {
+router.put("/api/:b2c_id", async (req, res) => {
   const output = {
     success: false,
     code: 0,
@@ -104,7 +102,6 @@ router.put("/api/:b2c_id", upload.none(), async (req, res) => {
   res.json(output);
 });
 
-
 // 發送重設密碼郵件
 router.post('/request-password-reset', async (req, res) => {
   const { email } = req.body;
@@ -118,7 +115,6 @@ router.post('/request-password-reset', async (req, res) => {
     const user = rows[0];
     const resetCode = crypto.randomInt(100000, 999999).toString(); // 生成六位數驗證碼
     const expireTime = moment().add(5, 'minutes').format('YYYY-MM-DD HH:mm:ss');
-
 
     // 更新數據庫中的驗證碼和過期時間
     await db.query('UPDATE b2c_members SET reset_code = ?, reset_code_expire = ? WHERE b2c_id = ?', [resetCode, expireTime, user.b2c_id]);
@@ -186,87 +182,23 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-
 // 處理大頭貼上傳
-export const uploadAvatar = async (b2c_id, avatarBase64) => {
+router.post('/avatar', async (req, res) => {
+  const { b2c_id, b2c_avatar } = req.body;
+
+  if (!b2c_id || !b2c_avatar) {
+    return res.status(400).json({ success: false, error: '缺少必要的數據' });
+  }
+
   try {
-    const response = await fetch(getUploadAvatarUrl(b2c_id), {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ b2c_avatar: avatarBase64 }), // 修改為 b2c_avatar
-    });
+    // 將 Base64 字符串直接存儲在資料庫中
+    await db.query('UPDATE b2c_members SET b2c_avatar = ? WHERE b2c_id = ?', [b2c_avatar, b2c_id]);
 
-    const result = await response.json();
-    if (!response.ok) {
-      throw new Error(result.error || '上傳失敗');
-    }
-
-    return result.data; // 返回圖片的 URL 或其他信息
+    res.json({ success: true, avatarUrl: b2c_avatar });
   } catch (error) {
-    console.error('上傳大頭貼時發生錯誤:', error);
-    throw error;
+    console.error(error);
+    res.status(500).json({ success: false, error: '伺服器錯誤' });
   }
-};
-
-// 取得保險紀錄
-
-router.get("/insurancerecords/:b2c_id", async (req, res) => {
-  const b2c_id = +req.params.b2c_id || 0;
-  if (!b2c_id) {
-    return res.json({ success: false, error: "沒有編號" });
-  }
-
-  const sql = `SELECT * FROM insurance_order WHERE fk_b2c_id=${b2c_id}`;
-  const [rows] = await db.query(sql);
-  if (!rows.length) {
-    return res.json({ success: false, error: "沒有該筆資料" });
-  }
-
-  const row = rows[0];
-
-  res.json({ success: true, data: row });
-});
-
-// 取得購物紀錄
-router.get("/productrecords/:b2c_id", async (req, res) => {
-  const b2c_id = +req.params.b2c_id || 0;
-  if (!b2c_id) {
-    return res.json({ success: false, error: "沒有編號" });
-  }
-
-  const sql = `SELECT * FROM request WHERE fk_b2c_id=${b2c_id}`;
-  const [rows] = await db.query(sql);
-  if (!rows.length) {
-    return res.json({ success: false, error: "沒有該筆資料" });
-  }
-
-  res.json({ success: true, data: rows }); // 修改此行，返回數組 rows
-});
-
-
-// 取得訂單細項
-router.get("/productrecords_detail/:request_id", async (req, res) => {
-  const request_id = +req.params.request_id || 0;
-  if (!request_id) {
-    return res.json({ success: false, error: "沒有訂單編號" });
-  }
-
-  // 查詢訂單細節
-  const sql = `
-    SELECT rd.request_detail_id, rd.purchase_quantity, rd.purchase_price, p.product_name
-    FROM request_detail as rd
-    JOIN product as p ON rd.fk_product_id = p.pk_product_id
-    WHERE rd.fk_request_id = ?
-  `;
-
-  const [rows] = await db.query(sql, [request_id]);
-  if (!rows.length) {
-    return res.json({ success: false, error: "沒有該訂單的細節" });
-  }
-
-  res.json({ success: true, data: rows });
 });
 
 export default router;

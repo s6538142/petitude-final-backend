@@ -1,20 +1,11 @@
-import multer from 'multer';
+import fs from 'fs';
 import path from 'path';
 
-// 設定儲存檔案的位置和名稱
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'public/uploads'); // 儲存路徑
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}${path.extname(file.originalname)}`); // 文件名稱
-  },
-});
+const saveBase64Image = (base64String, filePath) => {
+  const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');
+  const buffer = Buffer.from(base64Data, 'base64');
 
-// 創建 multer 上傳實例
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 最大 5MB
-});
+  fs.writeFileSync(filePath, buffer);
+};
 
-export default upload;
+export default saveBase64Image;
