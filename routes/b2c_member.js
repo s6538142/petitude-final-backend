@@ -258,7 +258,43 @@ router.get("/productrecords_detail/:request_id", async (req, res) => {
   res.json({ success: true, data: rows });
 });
 
+// 獲取用戶的收藏商品
+router.get('/favorite/:b2c_id', async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.status(400).json({ success: false, error: "沒有編號" });
+  }
+  
+  try {
+    const [rows] = await db.query('SELECT * FROM product_favorite as pf JOIN product as p ON pf.fk_product_id = p.pk_product_id WHERE fk_b2c_id = ?', [b2c_id]);
+    if (!rows.length) {
+      return res.json({ success: false, error: "沒有收藏的商品" });
+    }
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "伺服器錯誤" });
+  }
+});
 
+// 刪除收藏的商品
+router.delete('/favorite/delete', async (req, res) => {
+  const { product_favorite_id } = req.body;
+  if (!product_favorite_id) {
+    return res.status(400).json({ success: false, error: "缺少收藏商品的ID" });
+  }
+
+  try {
+    const [result] = await db.query('DELETE FROM product_favorite WHERE product_favorite_id = ?', [product_favorite_id]);
+    if (result.affectedRows === 0) {
+      return res.json({ success: false, error: "沒有該收藏商品" });
+    }
+    res.json({ success: true, message: '商品已從收藏中移除' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, error: "伺服器錯誤" });
+  }
+});
 
 
 export default router;
