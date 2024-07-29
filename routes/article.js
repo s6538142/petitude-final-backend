@@ -147,10 +147,11 @@ const getListData = async (req) => {
       return { success, redirect };
     }
 
-    // 獲取文章及其留言數量
+    // 獲取文章及其留言和留言回覆數量
     const sql = `
       SELECT a.*, c.class_name,
-        (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) AS message_count
+        (SELECT COUNT(*) FROM message m WHERE m.fk_article_id = a.article_id) +
+        (SELECT COUNT(*) FROM re_message rm JOIN message m ON rm.fk_message_id = m.message_id WHERE m.fk_article_id = a.article_id) AS message_count
       FROM article a
       JOIN class c ON a.fk_class_id = c.class_id
       ${where}
