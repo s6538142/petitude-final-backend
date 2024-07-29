@@ -215,9 +215,7 @@ router.get("/insurancerecords/:b2c_id", async (req, res) => {
     return res.json({ success: false, error: "沒有該筆資料" });
   }
 
-  const row = rows[0];
-
-  res.json({ success: true, data: row });
+  res.json({ success: true, data: rows });
 });
 
 // 取得購物紀錄
