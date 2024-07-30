@@ -3,6 +3,8 @@ const router = express.Router();
 import * as crypto from "crypto";
 import db from "../utils/connect-mysql.js";
 
+
+
 /* GET home page. */
 router.get("/", function (req, res, next) {
   const amount = req.query.amount;
@@ -129,20 +131,40 @@ router.get("/", function (req, res, next) {
     .join("");
 
   //六、製作送出畫面
-  const htmlContent = `
-  <!DOCTYPE html>
-  <html>
-  <head>
-      <title>全方位金流-測試</title>
-  </head>
-  <body>
-      <form method="post" action="${APIURL}">
-  ${inputs}
-  <input type ="submit" value = "送出參數">
-      </form>
-  </body>
-  </html>
-  `;
+  // const htmlContent = `
+  // <!DOCTYPE html>
+  // <html>
+  // <head>
+  //     <title>全方位金流-測試</title>
+  // </head>
+  // <body>
+  //     <form method="post" action="${APIURL}">
+  // ${inputs}
+  // <input type ="submit" value = "送出參數">
+  //     </form>
+  // </body>
+  // </html>
+  // `;
+
+
+  //六、製作送出畫面
+const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>全方位金流-測試</title>
+</head>
+<body>
+    <form id="ecpayForm" method="post" action="${APIURL}">
+${inputs}
+    </form>
+    <script>
+        document.getElementById('ecpayForm').submit();
+    </script>
+</body>
+</html>
+`;
+  
 
   // res.send(htmlContent);
 
