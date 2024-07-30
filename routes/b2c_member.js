@@ -234,6 +234,39 @@ router.get("/productrecords/:b2c_id", async (req, res) => {
   res.json({ success: true, data: rows }); // 修改此行，返回數組 rows
 });
 
+// 取得預約紀錄
+router.get("/reservationrecords/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM reservation WHERE fk_b2c_id=${b2c_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  res.json({ success: true, data: rows }); 
+});
+
+//取得契約購買紀錄
+router.get("/bookingrecords/:b2c_id", async (req, res) => {
+  const b2c_id = +req.params.b2c_id || 0;
+  if (!b2c_id) {
+    return res.json({ success: false, error: "沒有編號" });
+  }
+
+  const sql = `SELECT * FROM booking WHERE fk_b2c_id=${b2c_id}`;
+  const [rows] = await db.query(sql);
+  if (!rows.length) {
+    return res.json({ success: false, error: "沒有該筆資料" });
+  }
+
+  res.json({ success: true, data: rows });
+});
+
+
 
 // 取得訂單細項
 router.get("/productrecords_detail/:request_id", async (req, res) => {
