@@ -7,6 +7,8 @@ const router = express.Router();
 // 添加 CORS
 router.use(cors());
 
+//處理分頁和關鍵字搜索。
+//從資料庫獲取專案列表，分頁和搜索功能。
 const getListData = async (req) => {
   try {
     let success = false;
@@ -57,6 +59,7 @@ const getListData = async (req) => {
   }
 };
 
+//使用 getListData 函數獲取project列表。處理分頁重定向。
 router.get("/", async (req, res) => {
   try {
     res.locals.title = "契約列表" + res.locals.title;
@@ -72,6 +75,7 @@ router.get("/", async (req, res) => {
   }
 });
 
+//獲取所有project資料。
 router.get("/project", async (req, res) => {
   try {
     const [rows] = await db.query("SELECT * FROM project ORDER BY project_id");
@@ -82,7 +86,27 @@ router.get("/project", async (req, res) => {
   }
 });
 
-// 結帳用路由, 丟入資料庫的地方
+// 抓取會員資料
+router.get("/user/:b2c_id", async (req, res) => {
+  try {
+    const b2c_id = req.params.b2c_id;
+    const [rows] = await db.query(
+      "SELECT * FROM b2c_members WHERE b2c_id = ?",
+      [b2c_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
+// 結帳用路由, 處理訂單結帳邏輯。
 
 router.post("/cartCheckout1", async (req, res) => {
   let connection;
@@ -91,13 +115,13 @@ router.post("/cartCheckout1", async (req, res) => {
     const { cartItems = [], ...customerInfo } = req.body;
     console.log("Received data:", req.body);
 
-    // 驗證必要的欄位
+    // 驗證買家姓名
     if (!customerInfo.buyerName) {
       return res
         .status(400)
         .json({ success: false, error: "購買人姓名是必填欄位" });
     }
-
+    // 驗證買家電話
     if (!customerInfo.mobile) {
       return res
         .status(400)
@@ -112,10 +136,11 @@ router.post("/cartCheckout1", async (req, res) => {
     }
 
     // 開始處理資料庫新增
+    // 將訂單資訊插入資料庫
     connection = await db.getConnection();
     await connection.beginTransaction();
 
-    // 獲取會員id, 用buyerName去select這名字的id是多少
+    // 獲取b2c_id的訂單記錄
     let b2cId;
     if (customerInfo.buyerName) {
       const [b2cResult] = await connection.query(
@@ -126,12 +151,11 @@ router.post("/cartCheckout1", async (req, res) => {
       b2cId = b2cResult[0]?.b2c_id;
     }
 
-
     const stateMapping = {
       0: "未付款",
       1: "已付款",
     };
-    const projectMapping= {
+    const projectMapping = {
       1: "溫馨寵物 -個別羽化",
       2: "尊榮寵物 - 個別羽化",
       3: "朋友寵物 -集體羽化",
@@ -139,39 +163,38 @@ router.post("/cartCheckout1", async (req, res) => {
     const reverseStateMapping = {
       0: "未付款",
       1: "已付款",
-    }; 
+    };
     const reverseProjectMapping = {
       1: "溫馨寵物 -個別羽化",
       2: "尊榮寵物 - 個別羽化",
       3: "朋友寵物 -集體羽化",
     };
-// state
+    // state
     let stateId = stateMapping["已付款"];
 
     if (customerInfo.stateName) {
-      stateId = stateMapping[customerInfo.stateName] || 0; 
+      stateId = stateMapping[customerInfo.stateName] || 0;
     }
 
     if (typeof stateId !== "number" || isNaN(stateId)) {
-      stateId = 1; 
+      stateId = 1;
     }
-    console.log("stateId:", stateId); 
+    console.log("stateId:", stateId);
     const stateText = reverseStateMapping[stateId];
-    console.log("stateText:", stateText); 
-// project
-        let projectId = projectMapping["已付款"];
+    console.log("stateText:", stateText);
+    // project
+    let projectId = projectMapping["已付款"];
 
     if (customerInfo.projectName) {
-      projectId = projectMapping[customerInfo.projectName] || 0; 
+      projectId = projectMapping[customerInfo.projectName] || 0;
     }
 
     if (typeof projectId !== "number" || isNaN(projectId)) {
-      projectId = 1; 
+      projectId = 1;
     }
-    console.log("projectId:", projectId); 
+    console.log("projectId:", projectId);
     const projectText = reverseProjectMapping[projectId];
-    console.log("projectText:", projectText); 
-
+    console.log("projectText:", projectText);
 
     let billNum = "AA00000040";
     if (customerInfo.billNumName) {
@@ -226,6 +249,34 @@ router.post("/cartCheckout1", async (req, res) => {
     if (connection) {
       connection.release();
     }
+  }
+});
+
+// 抓取會員購買紀錄
+router.post("/booking/:b2c_id", async (req, res) => {
+  try {
+    const b2c_id = req.params.b2c_id;
+    const [rows] = await db.query(
+      `SELECT b.*, bk.*
+        FROM booking b
+        LEFT JOIN booking_detail bk ON b.booking_id = bk.fk_booking_id
+        WHERE b.fk_b2c_id = ?
+        ORDER BY b.booking_date DESC`,
+      [b2c_id]
+    );
+    // 如果查詢結果為空，回傳 404 錯誤和相應的訊息
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No booking records found for this user",
+      });
+    }
+    // 如果查詢結果不為空，回傳查詢到的資料
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    // 如果發生錯誤，記錄錯誤並回傳 500 錯誤和相應的訊息
+    console.error("Error fetching booking records:", error);
+    res.status(500).json({ success: false, error: "Server error" });
   }
 });
 
