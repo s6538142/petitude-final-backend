@@ -4,7 +4,6 @@ import * as crypto from "crypto";
 import db from "../utils/connect-mysql.js";
 
 
-
 /* GET home page. */
 router.get("/", function (req, res, next) {
   const amount = req.query.amount;
@@ -24,7 +23,7 @@ router.get("/", function (req, res, next) {
   const TotalAmount = amount;
   const TradeDesc = "商店線上付款";
   const ItemName = "寵度保險公司購買寵物保險"; //可改
-  const ReturnURL = "http://localhost:3001/ecpay/payment-result";  // 無用, 不用理
+  const ReturnURL = "http://localhost:3001/ecpayJ/payment-result";  // 無用, 不用理
   const OrderResultURL = "http://localhost:3000/insurance/insurance-payment05"; //完成後轉去的前端成功頁面
   const ChoosePayment = "ALL";
 
@@ -50,6 +49,8 @@ router.get("/", function (req, res, next) {
     .getSeconds()
     .toString()
     .padStart(2, "0")}${new Date().getMilliseconds().toString().padStart(2)}`;
+
+    tradeNoToOrderId.set(MerchantTradeNo, orderId); // 連結MerchantTradeNo & orderId
 
   const MerchantTradeDate = new Date().toLocaleDateString("zh-TW", {
     year: "numeric",
@@ -131,40 +132,21 @@ router.get("/", function (req, res, next) {
     .join("");
 
   //六、製作送出畫面
-  // const htmlContent = `
-  // <!DOCTYPE html>
-  // <html>
-  // <head>
-  //     <title>全方位金流-測試</title>
-  // </head>
-  // <body>
-  //     <form method="post" action="${APIURL}">
-  // ${inputs}
-  // <input type ="submit" value = "送出參數">
-  //     </form>
-  // </body>
-  // </html>
-  // `;
-
-
-  //六、製作送出畫面
-const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>全方位金流-測試</title>
-</head>
-<body>
-    <form id="ecpayForm" method="post" action="${APIURL}">
-${inputs}
-    </form>
-    <script>
-        document.getElementById('ecpayForm').submit();
-    </script>
-</body>
-</html>
-`;
-  
+  const htmlContent = `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <title>全方位金流-測試</title>
+  </head>
+  <body>
+      <form method="post" action="${APIURL}">
+  ${inputs}
+  <input type ="submit" value = "送出參數">
+      </form>
+  </body>
+  </html>
+  `;
+   
 
   // res.send(htmlContent);
 
@@ -193,5 +175,6 @@ ${inputs}
 });
 
 
-
 export default router;
+
+
