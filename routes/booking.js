@@ -67,4 +67,52 @@ router.get("/api/:booking_id", async (req, res) => {
   }
 });
 
+// 抓取會員資料
+router.get("/user/:b2c_id", async (req, res) => {
+  try {
+    const b2c_id = req.params.b2c_id;
+    const [rows] = await db.query(
+      "SELECT * FROM b2c_members WHERE b2c_id = ?",
+      [b2c_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    res.json({ success: true, data: rows[0] });
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
+// 抓取會員購買紀錄
+router.get("/booking/:b2c_id", async (req, res) => {
+  try {
+    const b2c_id = req.params.b2c_id;
+    const [rows] = await db.query(
+      `SELECT b.*, bk.*
+        FROM booking b
+        LEFT JOIN booking_detail bk ON b.booking_id = bk.fk_booking_id
+        WHERE b.fk_b2c_id = ?
+        ORDER BY b.booking_date DESC`,
+      [b2c_id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No purchase records found for this user",
+      });
+    }
+
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error("Error fetching purchase records:", error);
+    res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
+
 export default router;
