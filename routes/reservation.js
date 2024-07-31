@@ -132,15 +132,15 @@ router.get("/add", async (req, res) => {
 
 // 將資料帶進資料庫儲存
 router.post("/add", async (req, res) => {
-  try {
-    let { b2c_name, reservation_date, note } = req.body;
+    try {
+    let { b2c_name, reservation_date, reservation_time, note } = req.body;
 
-    // 使用前端發送的日期，如果沒有則使用當前日期
-    reservation_date = reservation_date || new Date();
+    // 合併預約日期和時間
+    const reservationDateTime = `${reservation_date} ${reservation_time}`;
 
-    // 格式化日期
-    const m = moment(reservation_date);
-    reservation_date = m.isValid() ? m.format(dateFormat) : null;
+    // 格式化日期時間
+    const m = moment(reservationDateTime, dateFormat);
+    const formattedDateTime = m.isValid() ? m.format(dateFormat) : null;
 
     // 先查詢用戶ID
     const [user] = await db.query(
