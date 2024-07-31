@@ -27,6 +27,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import insuranceRouter from "./routes/insurance.js";
@@ -35,6 +36,7 @@ import insuranceRouter from "./routes/insurance.js";
 // const upload = multer({ dest: "tmp_uploads/" }); // 初始化 Multer 以將上傳的檔案暫存到 tmp_uploads 資料夾
 
 const app = express(); // 創建 Express 應用實例
+
 
 app.set("view engine", "ejs"); // 設定模板引擎為 EJS
 
@@ -309,3 +311,4 @@ const port = process.env.WEB_PORT || 3002;
 app.listen(port, () => {
   console.log(`Server start: port ${port}`);
 });
+
