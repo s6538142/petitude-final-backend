@@ -50,7 +50,7 @@ router.get("/", function (req, res, next) {
     .toString()
     .padStart(2, "0")}${new Date().getMilliseconds().toString().padStart(2)}`;
 
-    tradeNoToOrderId.set(MerchantTradeNo, orderId); // 連結MerchantTradeNo & orderId
+  
 
   const MerchantTradeDate = new Date().toLocaleDateString("zh-TW", {
     year: "numeric",
