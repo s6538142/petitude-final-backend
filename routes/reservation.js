@@ -3,7 +3,7 @@ import moment from "moment-timezone";
 import db from "./../utils/connect-mysql.js";
 
 
-// 先設定日期格式
+// 先設定日期格式 ISO 8601
 const dateFormat = "YYYY-MM-DD HH:mm:ss";
 const router = express.Router();
 
@@ -171,32 +171,6 @@ router.post("/add", async (req, res) => {
 
 
     
-
-  //   router.post("/reservation/:b2c_id", (req, res)=>{
-  //     try {
-  //   const b2c_id = req.params.b2c_id;
-  //   const [rows] = await db.query(
-  //     `SELECT *
-  //       FROM reservation 
-  //       LEFT JOIN reservation ON reservation_id 
-  //       WHERE fk_b2c_id = ?
-  //       ORDER BY reservation_id DESC`,
-  //     [b2c_id]
-  //   );
-
-  //   if (rows.length === 0) {
-  //     return res.status(404).json({
-  //       success: false,
-  //       error: "No purchase records found for this user",
-  //     });
-  //   }
-
-  //   res.json({ success: true, data: rows });
-  // } catch (error) {
-  //   console.error("Error fetching purchase records:", error);
-  //   res.status(500).json({ success: false, error: "Server error" });
-  // }
-  //   })
 
 
 
