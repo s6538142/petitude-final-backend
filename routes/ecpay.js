@@ -21,7 +21,7 @@ router.get("/", function (req, res, next) {
   //二、輸入參數
   const TotalAmount = amount;
   const TradeDesc = "商店線上付款";
-  const ItemName = "xx商店購買一批";
+  const ItemName = "Petitude Company - 寵物商城";
   const ReturnURL = "http://localhost:3001/ecpay/payment-result";
   const OrderResultURL = "http://localhost:3000/estore/success"; //前端成功頁面
   const ChoosePayment = "ALL";

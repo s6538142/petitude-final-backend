@@ -342,7 +342,7 @@ router.post("/cartCheckout", async (req, res) => {
       (fk_b2c_id, request_price, fk_county_id, fk_city_id, recipient_address, recipient_mobile, recipient_phone, request_date) 
       VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
-        b2cId,
+        customerInfo.b2c_id,
         totalPrice,
         countyId,
         cityId,
