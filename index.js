@@ -26,11 +26,12 @@ import memberRouter from "./routes/b2c_member.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import googleLoginRoute from './routes/googleLoginRoute.js';
+import insuranceRouter from "./routes/insurance.js";
 
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-import insuranceRouter from "./routes/insurance.js";
 
 // tmp_uploads 暫存的資料夾
 // const upload = multer({ dest: "tmp_uploads/" }); // 初始化 Multer 以將上傳的檔案暫存到 tmp_uploads 資料夾
@@ -56,14 +57,7 @@ const corsOptions = {
   },
 };
 
-// TEST
-// const corsOptions = {
-//   origin: [
-//     '*',
-//   ],
-//   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-//   allowedHeaders: ['Content-Type', 'Authorization'],
-// };
+
 
 app.use(cors(corsOptions)); // 使用 CORS 中介軟體
 
@@ -104,6 +98,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/b2c_member", memberRouter);
+app.use(googleLoginRoute);
 
 app.get("/try-qs", (req, res) => {
   res.json(req.query);
