@@ -37,9 +37,8 @@ const getListData = async (req) => {
         return { redirect: `?page=${totalPages}` }; // 返回重定向對象
       }
       // 取得分頁資料
-      const sql = `SELECT * FROM \`project\`${where} LIMIT ${
-        (page - 1) * perPage
-      },${perPage}`;
+      const sql = `SELECT * FROM \`project\`${where} LIMIT ${(page - 1) * perPage
+        },${perPage}`;
       [rows] = await db.query(sql);
     }
 
@@ -208,9 +207,9 @@ router.post("/cartCheckout1", async (req, res) => {
     // 計算總價
     const totalPrice = Array.isArray(cartItems)
       ? cartItems.reduce(
-          (total, item) => total + item.project_price * item.qty,
-          0
-        )
+        (total, item) => total + item.project_price * item.qty,
+        0
+      )
       : 0;
 
     // 新增訂單資料表
@@ -218,7 +217,7 @@ router.post("/cartCheckout1", async (req, res) => {
       `INSERT INTO booking 
   (fk_b2c_id, fk_project_id, booking_state, booking_price, billNumber, booking_date) 
   VALUES (?, ?, ?, ?, ?, NOW())`,
-      [b2cId, cartItems[0].project_id, stateId, totalPrice, billNum]
+      [customerInfo.b2cId, cartItems[0].project_id, stateId, totalPrice, billNum]
     );
     console.log("orderResult:", orderResult);
 

@@ -3,7 +3,7 @@ import moment from "moment-timezone";
 import db from "./../utils/connect-mysql.js";
 
 
-// 先設定日期格式 ISO 8601
+// 先設定日期格式
 const dateFormat = "YYYY-MM-DD HH:mm:ss";
 const router = express.Router();
 
@@ -63,9 +63,8 @@ const getListData = async (req) => {
         return { success, redirect };
       }
 
-      const sql = `SELECT * FROM \`reservation\` ${where} ORDER BY reservation_id DESC LIMIT ${
-        (page - 1) * perPage
-      },${perPage}`;
+      const sql = `SELECT * FROM \`reservation\` ${where} ORDER BY reservation_id DESC LIMIT ${(page - 1) * perPage
+        },${perPage}`;
       console.log(sql);
       [rows] = await db.query(sql);
       rows.forEach((el) => {
@@ -105,7 +104,7 @@ router.get("/", async (req, res) => {
     console.error("Error in root route:", error);
     res.status(500).json({ success: false, error: "Server error" });
   }
-  
+
 });
 
 router.get("/api", async (req, res) => {
@@ -132,15 +131,15 @@ router.get("/add", async (req, res) => {
 
 // 將資料帶進資料庫儲存
 router.post("/add", async (req, res) => {
-    try {
-    let { b2c_name, reservation_date, reservation_time, note } = req.body;
+  try {
+    let { b2c_name, reservation_date, note } = req.body;
 
-    // 合併預約日期和時間
-    const reservationDateTime = `${reservation_date} ${reservation_time}`;
+    // 使用前端發送的日期，如果沒有則使用當前日期
+    reservation_date = reservation_date || new Date();
 
-    // 格式化日期時間
-    const m = moment(reservationDateTime, dateFormat);
-    const formattedDateTime = m.isValid() ? m.format(dateFormat) : null;
+    // 格式化日期
+    const m = moment(reservation_date);
+    reservation_date = m.isValid() ? m.format(dateFormat) : null;
 
     // 先查詢用戶ID
     const [user] = await db.query(
@@ -170,7 +169,33 @@ router.post("/add", async (req, res) => {
 });
 
 
-    
+
+
+//   router.post("/reservation/:b2c_id", (req, res)=>{
+//     try {
+//   const b2c_id = req.params.b2c_id;
+//   const [rows] = await db.query(
+//     `SELECT *
+//       FROM reservation 
+//       LEFT JOIN reservation ON reservation_id 
+//       WHERE fk_b2c_id = ?
+//       ORDER BY reservation_id DESC`,
+//     [b2c_id]
+//   );
+
+//   if (rows.length === 0) {
+//     return res.status(404).json({
+//       success: false,
+//       error: "No purchase records found for this user",
+//     });
+//   }
+
+//   res.json({ success: true, data: rows });
+// } catch (error) {
+//   console.error("Error fetching purchase records:", error);
+//   res.status(500).json({ success: false, error: "Server error" });
+// }
+//   })
 
 
 
