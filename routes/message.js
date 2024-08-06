@@ -19,23 +19,42 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-router.post("/add", (req, res) => {
+router.post("/add", async (req, res) => {
+  console.log("content", req.body.message_content);
   const { message_content, message_date, fk_article_id, fk_b2c_id } = req.body;
 
   const sql =
     "INSERT INTO message (message_content, message_date, fk_article_id, fk_b2c_id) VALUES (?, ?, ?, ?)";
 
-  db.query(
-    sql,
-    [message_content, message_date, fk_article_id, fk_b2c_id],
-    (err, result) => {
-      if (err) {
-        res.status(500).send({ success: false, message: "留言添加失敗" });
-        return;
-      }
-      res.send({ success: true, message_id: result.insertId });
-    }
-  );
+  // db.query(
+  //   sql,
+  //   [message_content, message_date, fk_article_id, fk_b2c_id],
+  //   (err, result) => {
+  //     console.log("eddie");
+
+  //     if (err) {
+  //       res.status(500).send({ success: false, message: "留言添加失敗" });
+  //       return;
+  //     }
+  //     console.log("result", result);
+
+  //     res.send({ success: true, message_id: result.insertId });
+  //   }
+  // );
+  const [result] = await db.query(sql, [
+    message_content,
+    message_date,
+    fk_article_id,
+    fk_b2c_id,
+  ]);
+
+  console.log("DBresult", result);
+  // 新增成功
+  if (result.affectedRows == 1) {
+    res.send({ success: true, message_id: result.insertId });
+  } else {
+    res.status(500).send({ success: false, message: "留言添加失敗" });
+  }
 });
 
 router.post("/re_message/add", (req, res) => {
@@ -60,7 +79,7 @@ router.post("/re_message/add", (req, res) => {
 
 router.get("/re_message/:message_id/replies", async (req, res) => {
   const { message_id } = req.params;
-  console.log("Message ID:", message_id);
+  // console.log("Message ID:", message_id);
 
   try {
     // 更新的 SQL 查詢，包括 JOIN 操作
